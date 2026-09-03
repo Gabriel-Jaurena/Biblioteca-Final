@@ -1,0 +1,348 @@
+{
+	"info": {
+		"_postman_id": "698ff99e-6b07-452d-914d-e5204d5e6657",
+		"name": "Sandersonian",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "49369426",
+		"_collection_link": "https://thebest1553-2421570.postman.co/workspace/Gaby-Jaurena's-Workspace~a4d51443-93cd-4e41-8893-f78722078b03/collection/49369426-698ff99e-6b07-452d-914d-e5204d5e6657?action=share&source=collection_link&creator=49369426"
+	},
+	"item": [
+		{
+			"name": "Libros",
+			"item": [
+				{
+					"name": "Create libro",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sagaId\": 3,\n  \"titulo\": \"Palabras Radiantes\",\n  \"autor\": \"Brandon Sanderson\",\n  \"fechaEdicion\": \"2014-03-04\",\n  \"numeroPaginas\": 1328,\n  \"descripcion\": \"Segundo libro del Archivo de las Tormentas.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{host}}:{{port}}/libros",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"libros"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get all libros",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port}}/libros",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"libros"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get libro by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port}}/libros/",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"libros",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update libros",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"titulo\": \"MISTBOOOORN\",\n    \"autor\": \"EL GORDO SANDERSON\",\n    \"fechaEdicion\": \"2022-11-17T23:51:00\",\n    \"descripcion\": \"TERRIBLEasas<d dfa<sdf LOCURA\",\n    \"numeroPaginas\": 5000\n}\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{host}}:{{port}}/libros/1",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"libros",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete libros",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port}}/libros/2",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"libros",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Query libros",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port}}/libros?titulo=reyes",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"libros"
+							],
+							"query": [
+								{
+									"key": "titulo",
+									"value": "reyes"
+								},
+								{
+									"key": "fechaEdicion",
+									"value": "2024",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Sagas",
+			"item": [
+				{
+					"name": "CREATE Sagas",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Archivo de las Tormentas\",\n  \"descripcion\": \"Una serie épica ambientada en el mundo de Roshar.\",\n  \"fechaInicio\": \"2010-08-31\",\n  \"era\": \"Roshareana\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{host}}:{{port}}/sagas",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"sagas"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET all Sagas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port}}/sagas",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"sagas"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Sagas by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port}}/sagas/1",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"sagas",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE Sagas",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"descripcion\": \"La serie épica más extensa de Brandon Sanderson, ambientada en Roshar.\",\n  \"era\": \"Roshareana Moderna\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{host}}:{{port}}/sagas/1",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"sagas",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE Sagas",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port}}/sagas/1",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"sagas",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "QUERY Sagas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port}}/sagas?libroTitulo=pozo de la ascencion",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"sagas"
+							],
+							"query": [
+								{
+									"key": "nombre",
+									"value": "nacidos",
+									"disabled": true
+								},
+								{
+									"key": "libroTitulo",
+									"value": "pozo de la ascencion"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "host",
+			"value": ""
+		},
+		{
+			"key": "port",
+			"value": "",
+			"type": "default"
+		}
+	]
+}

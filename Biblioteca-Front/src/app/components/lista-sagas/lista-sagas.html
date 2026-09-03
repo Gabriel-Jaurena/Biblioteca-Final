@@ -1,0 +1,123 @@
+<div class="container fade-in">
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-header text-white" [ngClass]="esEdicion ? 'bg-primary' : 'bg-indigo'" style="background-color: #6610f2;">
+      <h5 class="mb-0">
+        <i class="bi" [ngClass]="esEdicion ? 'bi-pencil-square' : 'bi-plus-circle'"></i>
+        {{ esEdicion ? ' Editando Saga' : ' Nueva Saga' }}
+      </h5>
+    </div>
+    
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Nombre de la Saga</label>
+          <input type="text" class="form-control" placeholder="Ej: Nacidos de la Bruma" [(ngModel)]="nuevaSaga.nombre">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Era</label>
+          <input type="text" class="form-control" placeholder="Ej: Era 1" [(ngModel)]="nuevaSaga.era">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Fecha Inicio</label>
+          <input type="date" class="form-control" [(ngModel)]="nuevaSaga.fechaInicio">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Descripción</label>
+          <textarea class="form-control" rows="2" [(ngModel)]="nuevaSaga.description"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-footer text-end">
+      <button *ngIf="esEdicion" (click)="limpiarFormulario()" class="btn btn-secondary me-2">Cancelar</button>
+      <button (click)="procesarFormulario()" class="btn" [ngClass]="esEdicion ? 'btn-primary' : 'btn-success'">
+        <i class="bi bi-save"></i> {{ esEdicion ? 'Guardar Cambios' : 'Crear Saga' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="card mb-4 border-0 bg-light">
+    <div class="card-body">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label fw-bold small text-muted">Filtrar por Nombre</label>
+          <div class="input-group">
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" placeholder="Nombre..." [(ngModel)]="filtroNombre" (keyup.enter)="buscar()">
+          </div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-bold small text-muted">Filtrar por Libro</label>
+          <input type="text" class="form-control" placeholder="Título de libro..." [(ngModel)]="filtroLibroTitulo" (keyup.enter)="buscar()">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-bold small text-muted">Orden</label>
+          <select class="form-select" [(ngModel)]="criterioOrden" (change)="ordenarSagas()">
+            <option value="reciente">Más Recientes</option>
+            <option value="antiguo">Más Antiguas</option>
+            <option value="alfabetico">Alfabético (A-Z)</option>
+            <option value="era">Por Era</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-grid gap-2">
+          <button (click)="buscar()" class="btn btn-outline-primary">Buscar</button>
+          <button (click)="limpiarFiltros()" class="btn btn-link text-decoration-none btn-sm text-muted">Limpiar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="mb-4 border-bottom pb-2 text-indigo" style="color: #6610f2;">
+    <i class="bi bi-globe"></i> Sagas del Cosmere
+  </h2>
+
+  <div *ngIf="sagas.length > 0; else noSagas" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+    <div class="col" *ngFor="let saga of sagas">
+      <div class="card h-100 shadow-sm hover-card border-top-indigo">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+          <h5 class="card-title mb-0 text-truncate" title="{{saga.nombre}}">{{ saga.nombre }}</h5>
+          <span class="badge bg-secondary">ID: {{ saga.id }}</span>
+        </div>
+        
+        <div class="card-body">
+          <div class="d-flex justify-content-between mb-3">
+            <span class="badge bg-light text-dark border">
+              <i class="bi bi-hourglass-split"></i> {{ saga.era || 'N/A' }}
+            </span>
+            <small class="text-muted">{{ saga.fechaInicio | date:'mediumDate' }}</small>
+          </div>
+          
+          <p class="card-text text-secondary small">{{ saga.description }}</p>
+          
+          <div class="alert alert-light border d-flex align-items-center p-2 mb-0">
+            <i class="bi bi-book-half me-2 text-primary"></i>
+            <span class="small">Contiene <strong>{{ saga.libros?.length || 0 }}</strong> libros</span>
+          </div>
+        </div>
+
+        <div class="card-footer bg-white border-top-0 d-flex justify-content-between">
+          <a [routerLink]="['/sagas', saga.id]" class="btn btn-primary btn-sm">
+            <i class="bi bi-eye"></i> Ver Libros
+          </a>
+          <div>
+            <button (click)="cargarDatosParaEditar(saga)" class="btn btn-outline-warning btn-sm me-1">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button (click)="borrarSaga(saga.id)" class="btn btn-outline-danger btn-sm">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #noSagas>
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+      <p>No se encontraron sagas registradas.</p>
+    </div>
+  </ng-template>
+
+</div>

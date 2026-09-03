@@ -1,0 +1,26 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+  <div class="container">
+    <a class="navbar-brand" href="#">📚 Biblioteca Sanderson</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/libros" routerLinkActive="active">Libros</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/sagas" routerLinkActive="active">Sagas</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <router-outlet></router-outlet>
+</div>
+
+<footer class="text-center text-muted py-4 mt-5 border-top">
+  <p>© 2025 - Proyecto Tuari | Desarrollado con Angular & NestJS</p>
+</footer>

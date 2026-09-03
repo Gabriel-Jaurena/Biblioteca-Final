@@ -1,0 +1,54 @@
+services:
+  frontend:
+    build:
+      context: ./Biblioteca-Front
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3000
+    volumes:
+      - ./Biblioteca-Front:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - api
+  api:
+    # Compilación dinámica: Instruye al motor a construir la imagen utilizando el Dockerfile ubicado en el directorio raíz.
+    build: ./Biblioteca-Back
+    # Mapeo de Puertos: Asigna el tráfico del puerto 3000 de la máquina host hacia el puerto 3000 del contenedor.
+    ports:
+      - '3000:3000'
+    # Inyección de Entorno: Sustituye el uso del archivo .env local. Inyecta las variables directamente en el proceso.
+    environment:
+      DB_TYPE: postgres
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: sanderson
+      DB_PASSWORD: 123456789
+      DB_DATABASE: cosmere
+      DB_SSL: false
+    # Montajes de Volumen:
+    # 1. El directorio local se refleja en /usr/src/app, permitiendo la detección de cambios (watch mode) sin reconstrucción[cite: 4].
+    # 2. Volumen anónimo para node_modules, previene la sobrescritura por dependencias del sistema host.
+    volumes:
+      - ./Biblioteca-Back:/usr/src/app
+      - /usr/src/app/node_modules
+      # Control de Arranque: Impide la inicialización del contenedor de la API si el motor de base de datos no se encuentra desplegado.
+    depends_on:
+      - postgres
+
+  postgres:
+    # Conservación de la topología original de persistencia de datos[cite: 1].
+    image: 'postgres:14-alpine'
+    restart: always
+    environment:
+      POSTGRES_USER: sanderson
+      POSTGRES_PASSWORD: 123456789
+      POSTGRES_DB: cosmere
+    ports:
+      - '5432:5432'
+    volumes:
+      - 'postgres_data:/var/lib/postgresql/data'
+
+volumes:
+  postgres_data: {}

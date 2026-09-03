@@ -1,0 +1,122 @@
+<div class="container fade-in">
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-header text-white" [ngClass]="esEdicion ? 'bg-primary' : 'bg-success'">
+      <h5 class="mb-0">
+        <i class="bi" [ngClass]="esEdicion ? 'bi-pencil-square' : 'bi-plus-circle'"></i>
+        {{ esEdicion ? ' Editando Libro (ID: ' + nuevoLibro.id + ')' : ' Agregar Nuevo Libro' }}
+      </h5>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-8">
+          <label class="form-label">Título</label>
+          <input type="text" class="form-control" placeholder="Ej: El Imperio Final" [(ngModel)]="nuevoLibro.titulo">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Autor</label>
+          <input type="text" class="form-control" placeholder="Ej: Brandon Sanderson" [(ngModel)]="nuevoLibro.autor">
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Saga ID</label>
+          <input type="number" class="form-control" [(ngModel)]="nuevoLibro.sagaId">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Páginas</label>
+          <input type="number" class="form-control" [(ngModel)]="nuevoLibro.numeroPaginas">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Fecha de Publicación</label>
+          <input type="date" class="form-control" [(ngModel)]="nuevoLibro.fechaEdicion">
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Descripción</label>
+          <textarea class="form-control" rows="2" [(ngModel)]="nuevoLibro.descripcion"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer text-end">
+      <button *ngIf="esEdicion" (click)="limpiarFormulario()" class="btn btn-secondary me-2">
+        Cancelar
+      </button>
+      <button (click)="procesarFormulario()" class="btn" [ngClass]="esEdicion ? 'btn-primary' : 'btn-success'">
+        <i class="bi bi-save"></i> {{ esEdicion ? 'Guardar Cambios' : 'Agregar Libro' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="row mb-4 align-items-end bg-light p-3 rounded border">
+    <div class="col-md-4">
+      <label class="form-label fw-bold">🔍 Filtrar por Título</label>
+      <input type="text" class="form-control" [(ngModel)]="filtroTitulo" (keyup.enter)="buscar()">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label fw-bold">Año</label>
+      <input type="number" class="form-control" [(ngModel)]="filtroAnio">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label fw-bold">Ordenar por</label>
+      <select class="form-select" [(ngModel)]="criterioOrden" (change)="ordenarLibros()">
+        <option value="reciente">Más Recientes</option>
+        <option value="antiguo">Más Antiguos</option>
+        <option value="alfabetico">A-Z</option>
+        <option value="anio">Año</option>
+      </select>
+    </div>
+    <div class="col-md-3 d-grid gap-2 d-md-flex justify-content-md-end">
+      <button (click)="buscar()" class="btn btn-primary me-md-2"><i class="bi bi-search"></i></button>
+      <button (click)="limpiarFiltros()" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></button>
+    </div>
+  </div>
+
+  <h2 class="mb-4 border-bottom pb-2">📚 Catálogo de Libros</h2>
+
+  <div *ngIf="libros.length > 0; else noLibros" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    
+    <div class="col" *ngFor="let libro of libros">
+      <div class="card h-100 shadow-sm hover-shadow">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0 text-truncate" title="{{libro.titulo}}">{{ libro.titulo }}</h5>
+          <span class="badge bg-dark">Saga: {{ libro.sagaId }}</span>
+        </div>
+        <div class="card-body">
+          <h6 class="card-subtitle mb-2 text-muted">{{ libro.autor }}</h6>
+          <p class="card-text small text-secondary">{{ libro.descripcion }}</p>
+          
+          <ul class="list-group list-group-flush small">
+            <li class="list-group-item d-flex justify-content-between">
+              <span>Páginas:</span> <strong>{{ libro.numeroPaginas }}</strong>
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+              <span>Publicado:</span> <strong>{{ libro.fechaEdicion | date:'yyyy' }}</strong>
+            </li>
+          </ul>
+        </div>
+        <div class="card-footer bg-white border-top-0 d-flex justify-content-between">
+          <a [routerLink]="['/libros', libro.id]" class="btn btn-outline-info btn-sm">
+            <i class="bi bi-eye"></i> Ver
+          </a>
+          <div>
+            <button (click)="cargarDatosParaEditar(libro)" class="btn btn-outline-warning btn-sm me-1">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button (click)="borrarLibro(libro.id)" class="btn btn-outline-danger btn-sm">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <ng-template #noLibros>
+    <div class="alert alert-warning text-center" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      No se encontraron libros en la base de datos.
+    </div>
+  </ng-template>
+
+</div>

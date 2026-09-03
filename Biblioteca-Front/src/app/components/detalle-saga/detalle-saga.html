@@ -1,0 +1,66 @@
+<div class="container py-4 fade-in">
+  
+  <a routerLink="/sagas" class="btn btn-outline-secondary mb-4">
+    <i class="bi bi-arrow-left"></i> Volver a Sagas
+  </a>
+
+  <div *ngIf="saga" class="p-5 mb-4 bg-light rounded-3 border shadow-sm position-relative overflow-hidden">
+    <i class="bi bi-globe position-absolute text-secondary opacity-25" style="font-size: 10rem; right: -20px; top: -20px;"></i>
+    
+    <div class="position-relative">
+      <h1 class="display-5 fw-bold text-primary">{{ saga.nombre }}</h1>
+      <div class="d-flex gap-3 my-3">
+        <span class="badge bg-dark">ID: {{ saga.id }}</span>
+        <span class="badge bg-info text-dark">{{ saga.era }}</span>
+        <span class="badge bg-secondary"><i class="bi bi-calendar"></i> {{ saga.fechaInicio | date:'mediumDate' }}</span>
+      </div>
+      <p class="col-md-8 fs-5">{{ saga.description }}</p>
+    </div>
+  </div>
+
+  <h3 class="mb-3 border-bottom pb-2">
+    📚 Libros en esta Saga 
+    <span class="badge bg-light text-dark border ms-2 fs-6">{{ libros.length }}</span>
+  </h3>
+  
+  <div *ngIf="libros.length > 0; else noLibros" class="row">
+    <div class="col-md-8">
+      <div class="list-group shadow-sm">
+        <a *ngFor="let libro of libros" 
+           [routerLink]="['/libros', libro.id]" 
+           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
+          
+          <div>
+            <h5 class="mb-1 text-primary">{{ libro.titulo }}</h5>
+            <small class="text-muted">
+              <i class="bi bi-person"></i> {{ libro.autor }} &nbsp;|&nbsp; 
+              <i class="bi bi-calendar-event"></i> {{ libro.fechaEdicion | date:'yyyy' }}
+            </small>
+          </div>
+          
+          <span class="badge bg-primary rounded-pill">
+            Ver <i class="bi bi-chevron-right"></i>
+          </span>
+        </a>
+      </div>
+    </div>
+    
+    <div class="col-md-4 d-none d-md-block">
+      <div class="alert alert-info">
+        <h6 class="alert-heading"><i class="bi bi-info-circle"></i> Información</h6>
+        <p class="small mb-0">Selecciona un libro de la lista para ver sus detalles completos, editarlo o gestionar su información.</p>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #noLibros>
+    <div class="text-center py-5 border rounded bg-light">
+      <i class="bi bi-journal-x fs-1 text-muted"></i>
+      <p class="mt-2 text-muted">Esta saga aún no tiene libros registrados.</p>
+      <a routerLink="/libros" class="btn btn-sm btn-outline-success mt-2">
+        Ir a crear un libro
+      </a>
+    </div>
+  </ng-template>
+
+</div>
