@@ -9,7 +9,7 @@ import { Sagas } from './entities/sagas.entity';
 import { QuerySagasDto } from './dto/query-sagas-dto';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Libro } from 'src/libros/entities/libro.entity';
+import { Libro } from '../libros/entities/libro.entity';
 
 @Injectable()
 export class SagasService {
@@ -32,8 +32,8 @@ export class SagasService {
     let hasInitialWhere = false; // Para saber si ya usamos .where()
     // Aplica filtro por nombre de la saga si se proporciona
     if (nombre) {
-      // Usamos ILIKE para búsqueda insensible a mayúsculas/minúsculas en PostgreSQL
-      queryBuilder.where('saga.nombre ILIKE :nombre', {
+      // SQLite uses LIKE for case-insensitive comparison (ASCII)
+      queryBuilder.where('saga.nombre LIKE :nombre', {
         nombre: `%${nombre}%`,
       });
       hasInitialWhere = true; // Marcamos que ya usamos where()
@@ -43,7 +43,7 @@ export class SagasService {
       // Determinamos si usar where() (si es la primera condición) o andWhere()
       const conditionMethod = hasInitialWhere ? 'andWhere' : 'where';
       // Añadimos la condición sobre el campo 'titulo' de la tabla unida 'libro'
-      queryBuilder[conditionMethod]('libro.titulo ILIKE :libroTitulo', {
+      queryBuilder[conditionMethod]('libro.titulo LIKE :libroTitulo', {
         libroTitulo: `%${libroTitulo}%`,
       });
     }

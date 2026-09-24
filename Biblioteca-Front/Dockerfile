@@ -14,7 +14,7 @@ RUN npm install
 COPY . .
 
 # Capa de Metadatos de Red: Expone documentalmente el puerto TCP 5173 (estándar de Vite).
-EXPOSE 5173
+EXPOSE 4200
 
 # Capa de Ejecución: Inicia el servidor de desarrollo. La bandera --host expone el servicio a la red virtual de Docker para ser accesible desde el sistema host.
 CMD ["npm", "start", "--", "--host", "0.0.0.0"]

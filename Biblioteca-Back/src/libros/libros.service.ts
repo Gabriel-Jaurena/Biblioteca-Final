@@ -30,15 +30,17 @@ export class LibrosService {
     const queryBuilder = this.librosRepository.createQueryBuilder('libro');
 
     if (titulo) {
-      queryBuilder.andWhere('libro.titulo ILIKE :titulo', {
+      // SQLite uses LIKE for case-insensitive comparison (ASCII)
+      queryBuilder.andWhere('libro.titulo LIKE :titulo', {
         titulo: `%${titulo}%`,
       });
     }
     if (fechaEdicion) {
       const year = Number(fechaEdicion);
       if (!isNaN(year)) {
-        queryBuilder.andWhere('EXTRACT(YEAR FROM libro.fechaEdicion) = :year', {
-          year,
+        // SQLite uses strftime for date extraction
+        queryBuilder.andWhere("strftime('%Y', libro.fechaEdicion) = :year", {
+          year: String(year),
         });
       }
     }

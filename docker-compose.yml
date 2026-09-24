@@ -4,7 +4,7 @@ services:
       context: ./Biblioteca-Front
       dockerfile: Dockerfile
     ports:
-      - "5173:5173"
+      - "4200:4200"
     environment:
       - VITE_API_URL=http://localhost:3000
     volumes:
