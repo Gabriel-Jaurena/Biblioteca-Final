@@ -1,0 +1,204 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  # ─────────────────────────────────────────────
+  # BACKEND: Unit + E2E tests (Jest)
+  # ─────────────────────────────────────────────
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./Biblioteca-Back
+
+    services:
+      postgres:
+        image: postgres:14-alpine
+        env:
+          POSTGRES_USER: sanderson
+          POSTGRES_PASSWORD: '123456789'
+          POSTGRES_DB: cosmere
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U sanderson -d cosmere"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: Biblioteca-Back/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run static code analysis
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Run e2e tests
+        run: npm run test:e2e
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: sanderson
+          DB_PASSWORD: '123456789'
+          DB_DATABASE: cosmere
+          DB_SSL: 'false'
+
+  # ─────────────────────────────────────────────
+  # FRONTEND: Unit tests (mock manual, sin backend)
+  # ─────────────────────────────────────────────
+  frontend-unit:
+    name: Frontend Unit Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./Biblioteca-Front
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: Biblioteca-Front/package-lock.json
+
+      - name: Install Chromium
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser
+
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run static code analysis
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm run test:unit
+        env:
+          CHROME_BIN: /usr/bin/chromium-browser
+
+  # ─────────────────────────────────────────────
+  # FRONTEND: Integration test (requiere backend + postgres reales)
+  # ─────────────────────────────────────────────
+  frontend-integration:
+    name: Frontend Integration Test
+    needs: [backend-tests, frontend-unit]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./Biblioteca-Front
+
+    services:
+      postgres:
+        image: postgres:14-alpine
+        env:
+          POSTGRES_USER: sanderson
+          POSTGRES_PASSWORD: '123456789'
+          POSTGRES_DB: cosmere
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U sanderson -d cosmere"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ─── Backend ───
+      - name: Setup Node.js (Backend)
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: Biblioteca-Back/package-lock.json
+
+      - name: Install Backend dependencies
+        working-directory: ./Biblioteca-Back
+        run: npm ci
+
+      - name: Build Backend
+        working-directory: ./Biblioteca-Back
+        run: npm run build
+
+      - name: Start Backend (background)
+        working-directory: ./Biblioteca-Back
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: sanderson
+          DB_PASSWORD: '123456789'
+          DB_DATABASE: cosmere
+          DB_SSL: 'false'
+        run: |
+          npm run start:prod &
+          echo "BACKEND_PID=$!" >> $GITHUB_ENV
+          sleep 20  # give Nest/TypeORM time to connect to Postgres
+
+      - name: Wait for Backend health
+        run: |
+          for i in {1..30}; do
+            if curl -sf http://localhost:3000/libros > /dev/null; then
+              echo "Backend ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend failed to start"
+          exit 1
+
+      - name: Create Saga prerequisite (FK para libros)
+        run: |
+          curl -X POST http://localhost:3000/sagas \
+            -H "Content-Type: application/json" \
+            -d '{"nombre":"Test Saga","descripcion":"Para test","fechaInicio":"2024-01-01","era":"Test"}'
+
+      # ─── Frontend ───
+      - name: Setup Node.js (Frontend)
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: Biblioteca-Front/package-lock.json
+
+      - name: Install Chromium
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser
+
+      - name: Install Frontend dependencies
+        run: npm ci
+
+      - name: Run integration test
+        run: npm run test:integration
+        env:
+          CHROME_BIN: /usr/bin/chromium-browser
+
+      - name: Stop Backend
+        if: always()
+        run: kill ${{ env.BACKEND_PID }} || true

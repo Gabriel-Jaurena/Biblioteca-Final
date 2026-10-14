@@ -1,4 +1,4 @@
-import { Libro } from "./libro"; // El CLI no agrega imports, esto lo pones vos
+import type { Libro } from "./libro"; // El CLI no agrega imports, esto lo pones vos
 
 export interface Saga {
   id: number;

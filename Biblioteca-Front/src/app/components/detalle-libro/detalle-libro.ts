@@ -1,8 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import type { OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router'; // Para leer la URL
-import { LibroService } from '../../services/libro';
-import { Libro } from '../../interfaces/libro';
+import type { ActivatedRoute} from '@angular/router';
+import { RouterLink } from '@angular/router'; // Para leer la URL
+import type { LibroService } from '../../services/libro';
+import type { Libro } from '../../interfaces/libro';
 
 @Component({
   selector: 'app-detalle-libro',

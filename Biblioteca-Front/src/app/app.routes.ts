@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+import type { Routes } from '@angular/router';
 import { ListaLibrosComponent } from './components/lista-libros/lista-libros';
 import { DetalleLibroComponent } from './components/detalle-libro/detalle-libro'; // Importar
 import { ListaSagasComponent } from './components/lista-sagas/lista-sagas';

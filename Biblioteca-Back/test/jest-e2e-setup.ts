@@ -4,7 +4,7 @@
 // (puerto mapeado del contenedor web-postgres-1: 0.0.0.0:5432->5432/tcp)
 
 process.env.DB_TYPE = 'postgres';
-process.env.DB_HOST = 'localhost';     // Desde el host, el puerto 5432 está expuesto
+process.env.DB_HOST = 'localhost'; // Desde el host, el puerto 5432 está expuesto
 process.env.DB_PORT = '5432';
 process.env.DB_USERNAME = 'sanderson';
 process.env.DB_PASSWORD = '123456789';
