@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import type { OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { Saga } from '../../interfaces/saga';
-import { SagaService } from '../../services/saga';
+import type { Saga } from '../../interfaces/saga';
+import type { SagaService } from '../../services/saga';
 
 @Component({
   selector: 'app-lista-sagas',

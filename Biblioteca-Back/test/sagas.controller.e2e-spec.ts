@@ -29,8 +29,12 @@ describe('SagasController (e2e) - Tests contra PostgreSQL real en Docker', () =>
     );
     await app.init();
 
-    sagasRepository = moduleFixture.get<Repository<Sagas>>(getRepositoryToken(Sagas));
-    librosRepository = moduleFixture.get<Repository<Libro>>(getRepositoryToken(Libro));
+    sagasRepository = moduleFixture.get<Repository<Sagas>>(
+      getRepositoryToken(Sagas),
+    );
+    librosRepository = moduleFixture.get<Repository<Libro>>(
+      getRepositoryToken(Libro),
+    );
 
     await librosRepository.createQueryBuilder().delete().execute();
     await sagasRepository.createQueryBuilder().delete().execute();
@@ -159,9 +163,7 @@ describe('SagasController (e2e) - Tests contra PostgreSQL real en Docker', () =>
     });
 
     it('debería retornar HTTP 404 si la saga no existe', async () => {
-      await request(app.getHttpServer())
-        .delete('/sagas/999999')
-        .expect(404);
+      await request(app.getHttpServer()).delete('/sagas/999999').expect(404);
     });
 
     it('debería retornar HTTP 400 si ID no es un número', async () => {

@@ -1,5 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import {
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { LibrosController } from '../src/libros/libros.controller';
 import { LibrosService } from '../src/libros/libros.service';
 import { Libro } from '../src/libros/entities/libro.entity';
@@ -92,11 +95,11 @@ describe('LibrosController - Tests Unitarios (Create & Delete)', () => {
       const result = await controller.create(createDto);
 
       // ASSERT: Validamos comportamiento
-      expect(service.create).toHaveBeenCalledTimes(1);           // Una sola llamada
-      expect(service.create).toHaveBeenCalledWith(createDto);    // Con el DTO correcto
-      expect(result).toEqual(mockLibro);                         // Retorna lo que service devuelve
-      expect(result.id).toBe(1);                                 // ID asignado por BD
-      expect(result.titulo).toBe(createDto.titulo);              // Datos conservados
+      expect(service.create).toHaveBeenCalledTimes(1); // Una sola llamada
+      expect(service.create).toHaveBeenCalledWith(createDto); // Con el DTO correcto
+      expect(result).toEqual(mockLibro); // Retorna lo que service devuelve
+      expect(result.id).toBe(1); // ID asignado por BD
+      expect(result.titulo).toBe(createDto.titulo); // Datos conservados
     });
 
     it('debería propagar InternalServerErrorException (HTTP 500) si falla la BD', async () => {
@@ -116,11 +119,15 @@ describe('LibrosController - Tests Unitarios (Create & Delete)', () => {
 
       // ARRANGE: Simulamos error de BD (rollback transaccional)
       mockService.create.mockRejectedValue(
-        new InternalServerErrorException('Error al crear el libro. Verifique que el sagaId exista.'),
+        new InternalServerErrorException(
+          'Error al crear el libro. Verifique que el sagaId exista.',
+        ),
       );
 
       // ACT & ASSERT: El controller propaga la excepción hacia el framework
-      await expect(controller.create(createDto)).rejects.toThrow(InternalServerErrorException);
+      await expect(controller.create(createDto)).rejects.toThrow(
+        InternalServerErrorException,
+      );
       expect(service.create).toHaveBeenCalledTimes(1); // Se intentó la operación
     });
   });

@@ -29,8 +29,12 @@ describe('LibrosController (e2e) - Tests contra PostgreSQL real en Docker', () =
     );
     await app.init();
 
-    librosRepository = moduleFixture.get<Repository<Libro>>(getRepositoryToken(Libro));
-    sagasRepository = moduleFixture.get<Repository<Sagas>>(getRepositoryToken(Sagas));
+    librosRepository = moduleFixture.get<Repository<Libro>>(
+      getRepositoryToken(Libro),
+    );
+    sagasRepository = moduleFixture.get<Repository<Sagas>>(
+      getRepositoryToken(Sagas),
+    );
 
     // Limpieza inicial: DELETE sin WHERE (borra todas las filas)
     await librosRepository.createQueryBuilder().delete().execute();
@@ -191,9 +195,7 @@ describe('LibrosController (e2e) - Tests contra PostgreSQL real en Docker', () =
     });
 
     it('debería retornar HTTP 404 si el libro no existe', async () => {
-      await request(app.getHttpServer())
-        .delete('/libros/999999')
-        .expect(404);
+      await request(app.getHttpServer()).delete('/libros/999999').expect(404);
     });
 
     it('debería retornar HTTP 400 si ID no es un número', async () => {

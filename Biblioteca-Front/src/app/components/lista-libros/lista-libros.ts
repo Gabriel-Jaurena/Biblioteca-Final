@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import type { OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { Libro } from '../../interfaces/libro';
-import { LibroService } from '../../services/libro';
+import type { Libro } from '../../interfaces/libro';
+import type { LibroService } from '../../services/libro';
 
 @Component({
   selector: 'app-lista-libros',

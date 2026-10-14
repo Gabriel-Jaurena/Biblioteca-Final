@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { Saga } from '../interfaces/saga';
+import type { HttpClient} from '@angular/common/http';
+import { HttpParams } from '@angular/common/http';
+import type { Observable } from 'rxjs';
+import type { Saga } from '../interfaces/saga';
 import { environment } from '../../environments/environment';
 
 @Injectable({

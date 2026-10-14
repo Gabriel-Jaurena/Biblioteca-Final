@@ -1,5 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import {
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { SagasController } from '../src/sagas/sagas.controller';
 import { SagasService } from '../src/sagas/sagas.service';
 import { Sagas } from '../src/sagas/entities/sagas.entity';
@@ -88,9 +91,9 @@ describe('SagasController - Tests Unitarios (Create & Delete)', () => {
       expect(service.create).toHaveBeenCalledTimes(1);
       expect(service.create).toHaveBeenCalledWith(createDto);
       expect(result).toEqual(mockSaga);
-      expect(result.id).toBe(1);                    // ID auto-generado por BD
+      expect(result.id).toBe(1); // ID auto-generado por BD
       expect(result.nombre).toBe(createDto.nombre); // Campo requerido persistido
-      expect(result.libros).toEqual([]);            // Relación inicializada vacía
+      expect(result.libros).toEqual([]); // Relación inicializada vacía
     });
 
     it('debería propagar InternalServerErrorException (HTTP 500) si falla la BD', async () => {
@@ -114,7 +117,9 @@ describe('SagasController - Tests Unitarios (Create & Delete)', () => {
       );
 
       // ACT & ASSERT: Propagación hacia Exception Filter de NestJS
-      await expect(controller.create(createDto)).rejects.toThrow(InternalServerErrorException);
+      await expect(controller.create(createDto)).rejects.toThrow(
+        InternalServerErrorException,
+      );
       expect(service.create).toHaveBeenCalledTimes(1);
     });
   });

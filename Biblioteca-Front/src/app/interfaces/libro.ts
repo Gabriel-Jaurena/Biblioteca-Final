@@ -1,4 +1,4 @@
-import { Saga } from "./saga";
+import type { Saga } from "./saga";
 
 export interface Libro {
   id: number;       // ID único autogenerado por la BD

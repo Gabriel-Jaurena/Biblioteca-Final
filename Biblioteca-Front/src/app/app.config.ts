@@ -1,4 +1,5 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core'; // <-- Usar Zone
+import type { ApplicationConfig} from '@angular/core';
+import { provideZoneChangeDetection } from '@angular/core'; // <-- Usar Zone
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { routes } from './app.routes';

@@ -1,4 +1,5 @@
-import { RenderMode, ServerRoute } from '@angular/ssr';
+import type { ServerRoute } from '@angular/ssr';
+import { RenderMode } from '@angular/ssr';
 
 export const serverRoutes: ServerRoute[] = [
   // 1. Excepciones para rutas dinámicas (Se generan en vivo en el servidor)

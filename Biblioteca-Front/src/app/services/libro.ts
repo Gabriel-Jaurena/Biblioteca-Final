@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http'; // <-- Importar HttpParams
-import { Observable } from 'rxjs';
-import { Libro } from '../interfaces/libro';
+import type { HttpClient} from '@angular/common/http';
+import { HttpParams } from '@angular/common/http'; // <-- Importar HttpParams
+import type { Observable } from 'rxjs';
+import type { Libro } from '../interfaces/libro';
 import { environment } from '../../environments/environment';
 
 @Injectable({
