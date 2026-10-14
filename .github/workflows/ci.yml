@@ -148,10 +148,17 @@ jobs:
 
       - name: Start Backend (background)
         working-directory: ./Biblioteca-Back
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: sanderson
+          DB_PASSWORD: '123456789'
+          DB_DATABASE: cosmere
+          DB_SSL: 'false'
         run: |
           npm run start:prod &
           echo "BACKEND_PID=$!" >> $GITHUB_ENV
-          sleep 15  # esperar a que NestJS levante y conecte a Postgres
+          sleep 20  # give Nest/TypeORM time to connect to Postgres
 
       - name: Wait for Backend health
         run: |
