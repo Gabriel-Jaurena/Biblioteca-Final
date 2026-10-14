@@ -25,7 +25,7 @@ jobs:
         image: postgres:14-alpine
         env:
           POSTGRES_USER: sanderson
-          POSTGRES_PASSWORD: 123456789
+          POSTGRES_PASSWORD: '123456789'
           POSTGRES_DB: cosmere
         ports: ['5432:5432']
         options: >-
@@ -60,7 +60,7 @@ jobs:
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USERNAME: sanderson
-          DB_PASSWORD: 123456789
+          DB_PASSWORD: '123456789'
           DB_DATABASE: cosmere
           DB_SSL: 'false'
 
@@ -117,7 +117,7 @@ jobs:
         image: postgres:14-alpine
         env:
           POSTGRES_USER: sanderson
-          POSTGRES_PASSWORD: 123456789
+          POSTGRES_PASSWORD: '123456789'
           POSTGRES_DB: cosmere
         ports: ['5432:5432']
         options: >-
