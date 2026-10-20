@@ -1,20 +1,14 @@
 services:
   frontend:
-    build:
-      context: ./Biblioteca-Front
-      dockerfile: Dockerfile
+    image: gabyjaurena/biblioteca-front:2.0
     ports:
       - "4200:4200"
     environment:
       - VITE_API_URL=http://localhost:3000
-    volumes:
-      - ./Biblioteca-Front:/usr/src/app
-      - /usr/src/app/node_modules
     depends_on:
       - api
   api:
-    # Compilación dinámica: Instruye al motor a construir la imagen utilizando el Dockerfile ubicado en el directorio raíz.
-    build: ./Biblioteca-Back
+    image: gabyjaurena/biblioteca-back:2.0
     # Mapeo de Puertos: Asigna el tráfico del puerto 3000 de la máquina host hacia el puerto 3000 del contenedor.
     ports:
       - '3000:3000'
@@ -27,19 +21,13 @@ services:
       DB_PASSWORD: 123456789
       DB_DATABASE: cosmere
       DB_SSL: false
-    # Montajes de Volumen:
-    # 1. El directorio local se refleja en /usr/src/app, permitiendo la detección de cambios (watch mode) sin reconstrucción[cite: 4].
-    # 2. Volumen anónimo para node_modules, previene la sobrescritura por dependencias del sistema host.
-    volumes:
-      - ./Biblioteca-Back:/usr/src/app
-      - /usr/src/app/node_modules
-      # Control de Arranque: Impide la inicialización del contenedor de la API si el motor de base de datos no se encuentra desplegado.
+    # Control de Arranque: Impide la inicialización del contenedor de la API si el motor de base de datos no se encuentra desplegado.
     depends_on:
       - postgres
 
   postgres:
-    # Conservación de la topología original de persistencia de datos[cite: 1].
-    image: 'postgres:14-alpine'
+    # Imagen de base de datos propia en Docker Hub para evitar depender del repo oficial.
+    image: gabyjaurena/postgres14-alpine:2.0
     restart: always
     environment:
       POSTGRES_USER: sanderson

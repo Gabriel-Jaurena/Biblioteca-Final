@@ -202,3 +202,36 @@ jobs:
       - name: Stop Backend
         if: always()
         run: kill ${{ env.BACKEND_PID }} || true
+
+  # ─────────────────────────────────────────────
+  # DOCKER HUB: Publish images
+  # ─────────────────────────────────────────────
+  docker-publish:
+    name: Publish Images to Docker Hub
+    needs: [backend-tests, frontend-unit, frontend-integration]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Frontend
+        run: |
+          docker build -t gabyjaurena/biblioteca-front:2.0 ./Biblioteca-Front
+          docker push gabyjaurena/biblioteca-front:2.0
+
+      - name: Build and push Backend
+        run: |
+          docker build -t gabyjaurena/biblioteca-back:2.0 ./Biblioteca-Back
+          docker push gabyjaurena/biblioteca-back:2.0
+
+      - name: Build and push DB
+        run: |
+          docker pull postgres:14-alpine
+          docker tag postgres:14-alpine gabyjaurena/postgres14-alpine:2.0
+          docker push gabyjaurena/postgres14-alpine:2.0
