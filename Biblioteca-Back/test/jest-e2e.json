@@ -10,5 +10,6 @@
     "^@/(.*)$": "<rootDir>/src/$1"
   },
   "testTimeout": 30000,
-  "setupFilesAfterEnv": ["<rootDir>/test/jest-e2e-setup.ts"]
+  "setupFilesAfterEnv": ["<rootDir>/test/jest-e2e-setup.ts"],
+  "maxWorkers": 1
 }

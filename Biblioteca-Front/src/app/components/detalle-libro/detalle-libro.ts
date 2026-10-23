@@ -1,9 +1,9 @@
 import type { OnInit } from '@angular/core';
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import type { ActivatedRoute} from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { RouterLink } from '@angular/router'; // Para leer la URL
-import type { LibroService } from '../../services/libro';
+import { LibroService } from '../../services/libro';
 import type { Libro } from '../../interfaces/libro';
 
 @Component({

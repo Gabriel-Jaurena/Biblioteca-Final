@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import type { Saga } from '../../interfaces/saga';
-import type { SagaService } from '../../services/saga';
+import { SagaService } from '../../services/saga';
 
 @Component({
   selector: 'app-lista-sagas',

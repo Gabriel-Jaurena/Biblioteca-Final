@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import type { Libro } from '../../interfaces/libro';
-import type { LibroService } from '../../services/libro';
+import { LibroService } from '../../services/libro';
 
 @Component({
   selector: 'app-lista-libros',
