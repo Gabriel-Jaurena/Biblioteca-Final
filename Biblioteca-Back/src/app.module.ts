@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { LibrosModule } from './libros/libros.module';
 import { SagasModule } from './sagas/sagas.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MetricsModule } from './metrics/metrics.module';
 // Ya no necesitas importar las entidades aquí si usas autoLoadEntities
 // import { Libro } from './libros/entities/libro.entity';
 // import { Sagas } from './sagas/entities/sagas.entity';
@@ -32,6 +33,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     }),
     LibrosModule,
     SagasModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

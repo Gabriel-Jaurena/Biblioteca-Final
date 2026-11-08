@@ -7,7 +7,11 @@ services:
       - VITE_API_URL=http://localhost:3000
     depends_on:
       - api
+
   api:
+    # Se construye localmente para incluir los cambios de código (por ejemplo /metrics).
+    # El tag image se conserva para mantener compatibilidad con la imagen publicada.
+    build: ./Biblioteca-Back
     image: gabyjaurena/biblioteca-back:2.0
     # Mapeo de Puertos: Asigna el tráfico del puerto 3000 de la máquina host hacia el puerto 3000 del contenedor.
     ports:
@@ -23,7 +27,14 @@ services:
       DB_SSL: false
     # Control de Arranque: Impide la inicialización del contenedor de la API si el motor de base de datos no se encuentra desplegado.
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/metrics > /dev/null || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   postgres:
     # Imagen de base de datos propia en Docker Hub para evitar depender del repo oficial.
@@ -37,6 +48,55 @@ services:
       - '5432:5432'
     volumes:
       - 'postgres_data:/var/lib/postgresql/data'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U sanderson -d cosmere']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Exporta métricas de PostgreSQL en formato Prometheus (:9187).
+  # No se publica al host: solo Prometheus lo consume dentro de la red de Compose.
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: 'postgresql://sanderson:123456789@postgres:5432/cosmere?sslmode=disable'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    restart: unless-stopped
+    ports:
+      - '9090:9090'
+    volumes:
+      - './monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro'
+      - 'prometheus_data:/prometheus'
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    depends_on:
+      - api
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    restart: unless-stopped
+    ports:
+      - '3001:3000'
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    volumes:
+      - 'grafana_data:/var/lib/grafana'
+      - './monitoring/grafana/provisioning:/etc/grafana/provisioning:ro'
+      - './monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro'
+    depends_on:
+      - prometheus
 
 volumes:
   postgres_data: {}
+  prometheus_data: {}
+  grafana_data: {}
