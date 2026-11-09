@@ -1,10 +1,16 @@
 services:
   frontend:
+    # Imagen multi-stage con build de producción (SSR) y servidor Node en :4000.
+    build:
+      context: ./Biblioteca-Front
+      args:
+        # Angular resuelve la URL de la API en build time.
+        API_URL: ${API_URL:-http://localhost:3000}
     image: gabyjaurena/biblioteca-front:2.0
     ports:
-      - "4200:4200"
+      - "4200:4000"
     environment:
-      - VITE_API_URL=http://localhost:3000
+      PORT: 4000
     depends_on:
       - api
 
@@ -16,21 +22,23 @@ services:
     # Mapeo de Puertos: Asigna el tráfico del puerto 3000 de la máquina host hacia el puerto 3000 del contenedor.
     ports:
       - '3000:3000'
-    # Inyección de Entorno: Sustituye el uso del archivo .env local. Inyecta las variables directamente en el proceso.
+    # Inyección de Entorno: credenciales y configuración externalizadas.
+    # Los valores por defecto permiten levantar el entorno sin crear un .env.
     environment:
-      DB_TYPE: postgres
-      DB_HOST: postgres
+      DB_TYPE: ${DB_TYPE:-postgres}
+      DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: 5432
-      DB_USERNAME: sanderson
-      DB_PASSWORD: 123456789
-      DB_DATABASE: cosmere
-      DB_SSL: false
+      DB_USERNAME: ${DB_USERNAME:-sanderson}
+      DB_PASSWORD: ${DB_PASSWORD:-123456789}
+      DB_DATABASE: ${DB_DATABASE:-cosmere}
+      DB_SSL: ${DB_SSL:-false}
+      DB_SYNCHRONIZE: ${DB_SYNCHRONIZE:-true}
     # Control de Arranque: Impide la inicialización del contenedor de la API si el motor de base de datos no se encuentra desplegado.
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/metrics > /dev/null || exit 1']
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/health/ready > /dev/null || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -41,15 +49,15 @@ services:
     image: gabyjaurena/postgres14-alpine:2.0
     restart: always
     environment:
-      POSTGRES_USER: sanderson
-      POSTGRES_PASSWORD: 123456789
-      POSTGRES_DB: cosmere
+      POSTGRES_USER: ${DB_USERNAME:-sanderson}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-123456789}
+      POSTGRES_DB: ${DB_DATABASE:-cosmere}
     ports:
       - '5432:5432'
     volumes:
       - 'postgres_data:/var/lib/postgresql/data'
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U sanderson -d cosmere']
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME:-sanderson} -d ${DB_DATABASE:-cosmere}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -60,7 +68,7 @@ services:
     image: prometheuscommunity/postgres-exporter:v0.15.0
     restart: unless-stopped
     environment:
-      DATA_SOURCE_NAME: 'postgresql://sanderson:123456789@postgres:5432/cosmere?sslmode=disable'
+      DATA_SOURCE_NAME: 'postgresql://${DB_USERNAME:-sanderson}:${DB_PASSWORD:-123456789}@postgres:5432/${DB_DATABASE:-cosmere}?sslmode=disable'
     depends_on:
       postgres:
         condition: service_healthy
@@ -86,8 +94,8 @@ services:
     ports:
       - '3001:3000'
     environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
       GF_USERS_ALLOW_SIGN_UP: 'false'
     volumes:
       - 'grafana_data:/var/lib/grafana'

@@ -17,6 +17,13 @@ export class HttpMetricsInterceptor implements NestInterceptor {
     const http = context.switchToHttp();
     const request = http.getRequest<Request>();
     const response = http.getResponse<Response>();
+
+    // Los probes de Kubernetes consultan /health cada pocos segundos:
+    // se excluyen para no inflar las métricas HTTP de la aplicación.
+    if (request.path.startsWith('/health')) {
+      return next.handle();
+    }
+
     const start = process.hrtime.bigint();
 
     return next.handle().pipe(

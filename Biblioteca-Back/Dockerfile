@@ -1,20 +1,35 @@
-FROM node:22-alpine
+# ─────────────────────────────────────────────
+# Etapa 1: dependencias (incluye dev)
+# ─────────────────────────────────────────────
+FROM node:22-alpine AS deps
+WORKDIR /usr/src/app
+COPY package*.json ./
+RUN npm ci
 
-# Capa de Espacio de Trabajo: Establece el directorio interno absoluto donde operarán los comandos subsecuentes.
+# ─────────────────────────────────────────────
+# Etapa 2: compilación TypeScript
+# ─────────────────────────────────────────────
+FROM node:22-alpine AS build
+WORKDIR /usr/src/app
+COPY --from=deps /usr/src/app/node_modules ./node_modules
+COPY . .
+RUN npm run build
+
+# ─────────────────────────────────────────────
+# Etapa 3: runtime de producción
+# ─────────────────────────────────────────────
+FROM node:22-alpine AS runtime
+ENV NODE_ENV=production
 WORKDIR /usr/src/app
 
-# Capa de Resolución de Dependencias: Transfiere los manifiestos de paquetes.
-# Se aíslan del código fuente para aprovechar el almacenamiento en caché de Docker; si el código cambia pero las dependencias no, esta capa no se reconstruye.
+# Solo dependencias de producción para reducir superficie y tamaño.
 COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
 
-# Capa de Instalación: Ejecuta la descarga de módulos en el sistema de archivos de la imagen.
-RUN npm install
+COPY --from=build /usr/src/app/dist ./dist
 
-# Capa de Código Fuente: Copia la totalidad de los archivos del directorio de contexto local hacia el entorno interno.
-COPY . .
+# Ejecuta sin privilegios (requisito habitual de securityContext en K8s).
+USER node
 
-# Capa de Metadatos de Red: Expone documentalmente el puerto TCP 3000, estándar del servidor HTTP subyacente de NestJS.
 EXPOSE 3000
-
-# Capa de Ejecución: Define el proceso de arranque por defecto empleando el script de observación del compilador.
-CMD ["npm", "run", "start:dev"]
+CMD ["node", "dist/main.js"]

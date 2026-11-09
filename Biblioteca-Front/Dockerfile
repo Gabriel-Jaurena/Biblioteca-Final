@@ -1,20 +1,39 @@
-# Capa de Runtime: Define la imagen base ligera con Node.js 22.
-FROM node:22-alpine
-
-# Capa de Espacio de Trabajo: Establece el directorio interno.
+# ─────────────────────────────────────────────
+# Etapa 1: dependencias
+# ─────────────────────────────────────────────
+FROM node:22-alpine AS deps
 WORKDIR /usr/src/app
-
-# Capa de Resolución de Dependencias: Transfiere los manifiestos de paquetes.
 COPY package*.json ./
+RUN npm ci
 
-# Capa de Instalación: Ejecuta la descarga de módulos en el sistema de archivos de la imagen.
-RUN npm install
-
-# Capa de Código Fuente: Copia la totalidad de los archivos del contexto local.
+# ─────────────────────────────────────────────
+# Etapa 2: build de Angular (SSR)
+# ─────────────────────────────────────────────
+FROM node:22-alpine AS build
+WORKDIR /usr/src/app
+COPY --from=deps /usr/src/app/node_modules ./node_modules
 COPY . .
 
-# Capa de Metadatos de Red: Expone documentalmente el puerto TCP 5173 (estándar de Vite).
-EXPOSE 4200
+# La URL de la API se resuelve en build time (Angular). Se puede
+# sobreescribir con --build-arg API_URL=...
+ARG API_URL=https://biblioteca-sanderson.onrender.com
+RUN sed -i "s#apiUrl: '.*'#apiUrl: '${API_URL}'#" src/environments/environment.prod.ts \
+    && npm run build
 
-# Capa de Ejecución: Inicia el servidor de desarrollo. La bandera --host expone el servicio a la red virtual de Docker para ser accesible desde el sistema host.
-CMD ["npm", "start", "--", "--host", "0.0.0.0"]
+# ─────────────────────────────────────────────
+# Etapa 3: runtime de producción (servidor SSR Express)
+# ─────────────────────────────────────────────
+FROM node:22-alpine AS runtime
+ENV NODE_ENV=production
+ENV PORT=4000
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+COPY --from=build /usr/src/app/dist ./dist
+
+USER node
+
+EXPOSE 4000
+CMD ["node", "dist/biblioteca/server/server.mjs"]
