@@ -13,6 +13,9 @@ export const serverRoutes: ServerRoute[] = [
   },
   {
     path: '**',
-    renderMode: RenderMode.Prerender
+    // Las rutas consumen datos dinámicos de la API: no se prerenderizan
+    // en build time (eso hacía fallar el build de Docker por timeout).
+    // Se renderizan en el servidor en cada request.
+    renderMode: RenderMode.Server
   }
 ];
