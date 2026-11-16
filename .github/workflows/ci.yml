@@ -213,7 +213,7 @@ jobs:
     env:
       # URL de la API embebida en el build de Angular.
       # Puede sobreescribirse con la variable de repositorio API_URL.
-      API_URL: ${{ vars.API_URL || 'https://biblioteca-sanderson.onrender.com' }}
+      API_URL: ${{ vars.API_URL || 'https://biblioteca-back-z50o.onrender.com' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

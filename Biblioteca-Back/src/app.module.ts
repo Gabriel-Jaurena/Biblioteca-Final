@@ -8,9 +8,7 @@ import { SagasModule } from './sagas/sagas.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MetricsModule } from './metrics/metrics.module';
 import { HealthModule } from './health/health.module';
-// Ya no necesitas importar las entidades aquí si usas autoLoadEntities
-// import { Libro } from './libros/entities/libro.entity';
-// import { Sagas } from './sagas/entities/sagas.entity';
+import { buildTypeOrmOptions } from './database/typeorm.config';
 
 @Module({
   imports: [
@@ -22,20 +20,14 @@ import { HealthModule } from './health/health.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get<string>('DB_USERNAME'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_DATABASE'),
-        ssl:
-          configService.get<string>('DB_SSL') === 'true'
-            ? { rejectUnauthorized: false }
-            : false,
-        autoLoadEntities: true,
-        // En desarrollo se mantiene el autosync; en producción puede
-        // desactivarse con DB_SYNCHRONIZE=false cuando se usen migraciones.
-        synchronize: configService.get<string>('DB_SYNCHRONIZE') !== 'false',
+        // La app mantiene synchronize=true por defecto (Compose/K8s).
+        // En Render se usa DB_SYNCHRONIZE=false + DB_MIGRATIONS_RUN=true.
+        ...buildTypeOrmOptions((key) => configService.get<string>(key), true),
+        // Si la base no está lista al arrancar (cold start de Render),
+        // Nest reintenta la conexión en lugar de salir al primer fallo.
+        retryAttempts: Number(configService.get('DB_RETRY_ATTEMPTS') ?? 20),
+        retryDelay: Number(configService.get('DB_RETRY_DELAY') ?? 5000),
+        verboseRetryLog: configService.get('DB_RETRY_VERBOSE') === 'true',
       }),
     }),
     LibrosModule,

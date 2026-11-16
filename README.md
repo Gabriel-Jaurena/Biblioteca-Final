@@ -203,7 +203,7 @@ El job `docker-publish` usa **Docker Buildx** y publica las tres imágenes para 
 - `gabyjaurena/biblioteca-front:2.0`
 - `gabyjaurena/postgres14-alpine:2.0`
 
-La URL de la API del frontend se toma de la variable de repositorio `API_URL` y, si no está definida, usa `https://biblioteca-sanderson.onrender.com`.
+La URL de la API del frontend se toma de la variable de repositorio `API_URL` y, si no está definida, usa `https://biblioteca-back-z50o.onrender.com`.
 
 ### Verificación local
 

@@ -16,7 +16,7 @@ COPY . .
 
 # La URL de la API se resuelve en build time (Angular). Se puede
 # sobreescribir con --build-arg API_URL=...
-ARG API_URL=https://biblioteca-sanderson.onrender.com
+ARG API_URL=https://biblioteca-back-z50o.onrender.com
 RUN sed -i "s#apiUrl: '.*'#apiUrl: '${API_URL}'#" src/environments/environment.prod.ts \
     && npm run build
 
