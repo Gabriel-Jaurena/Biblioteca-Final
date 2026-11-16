@@ -2,13 +2,6 @@
   publish = "dist/biblioteca/browser"
   command = "npm run build"
 
-<<<<<<< Updated upstream
-[build.environment]
-  NODE_VERSION = "22"
-
-=======
-<<<<<<< Updated upstream
-=======
 [build.environment]
   NODE_VERSION = "22"
 
@@ -21,8 +14,6 @@
 # Fallback CSR para rutas profundas si el SSR no está disponible.
 # Con el runtime activo, la Edge Function atiende las rutas antes que este
 # redirect, así que no interfiere con el SSR.
->>>>>>> Stashed changes
->>>>>>> Stashed changes
 [[redirects]]
   from = "/*"
   to = "/index.csr.html"
