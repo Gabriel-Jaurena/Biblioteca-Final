@@ -205,6 +205,25 @@ El job `docker-publish` usa **Docker Buildx** y publica las tres imágenes para 
 
 La URL de la API del frontend se toma de la variable de repositorio `API_URL` y, si no está definida, usa `https://biblioteca-back-z50o.onrender.com`.
 
+### Deploy automático en Render (Deploy Hook)
+
+El CD vive en un workflow aparte, `.github/workflows/deploy-hook.yml` (`name: DeployHook`). Se dispara cuando el workflow `CI` termina (`workflow_run`), así la imagen ya fue publicada por `docker-publish` y no hay carrera entre workflows.
+
+Solo despliega si el `CI` terminó en éxito, el evento fue un `push` (no un PR) y la rama es la de deploy (por defecto `main`, configurable con la variable de repositorio `DEPLOY_BRANCH`). También se puede lanzar a mano con **Actions → DeployHook → Run workflow**.
+
+1. En Render → servicio `biblioteca-back` → **Settings → Deploy Hook**: copiar la URL.
+2. En GitHub → **Settings → Secrets and variables → Actions → New repository secret**:
+   - `RENDER_DEPLOY_HOOK` = URL del hook (`https://api.render.com/deploy/srv-...?key=...`).
+3. El workflow publica `gabyjaurena/biblioteca-back:2.0` y luego ejecuta:
+
+   ```bash
+   curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
+   ```
+
+El servicio de Render debe estar configurado como **"Deploy an existing image from a registry"** apuntando a `gabyjaurena/biblioteca-back:2.0`. Como el tag es mutable, cada redeploy vuelve a descargar la imagen recién publicada.
+
+> El deploy solo se dispara en la rama configurada, pero la imagen `:2.0` se sobrescribe con cada build que llegue a `docker-publish`.
+
 ### Verificación local
 
 ```bash

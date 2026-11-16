@@ -1,0 +1,39 @@
+name: DeployHook
+
+on:
+  # Se dispara cuando termina el workflow CI. Así el deploy ocurre recién
+  # cuando docker-publish ya subió la imagen nueva (evita la carrera).
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+  # Permite disparar el deploy manualmente desde la pestaña Actions.
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Trigger Render Deploy Hook
+    runs-on: ubuntu-latest
+    # Solo si el CI terminó bien, fue un push (no un PR) y la rama es la
+    # de deploy (main por defecto, configurable con DEPLOY_BRANCH).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == (vars.DEPLOY_BRANCH || 'main'))
+    steps:
+      - name: Trigger Render Deploy Hook
+        env:
+          # URL del Deploy Hook del servicio de Render:
+          # https://api.render.com/deploy/srv-XXXX?key=YYYY
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "::error::Falta el secret RENDER_DEPLOY_HOOK en el repositorio."
+            exit 1
+          fi
+          echo "Rama: ${{ github.event.workflow_run.head_branch || github.ref_name }}"
+          echo "Disparando redeploy en Render..."
+          # Render re-pulla el tag mutable (:2.0) publicado por el CI.
+          curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
+          echo
+          echo "Deploy disparado. Seguilo en el dashboard de Render."
