@@ -6,9 +6,9 @@ import { AppService } from './app.service';
 import { LibrosModule } from './libros/libros.module';
 import { SagasModule } from './sagas/sagas.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-// Ya no necesitas importar las entidades aquí si usas autoLoadEntities
-// import { Libro } from './libros/entities/libro.entity';
-// import { Sagas } from './sagas/entities/sagas.entity';
+import { MetricsModule } from './metrics/metrics.module';
+import { HealthModule } from './health/health.module';
+import { buildTypeOrmOptions } from './database/typeorm.config';
 
 @Module({
   imports: [
@@ -20,18 +20,20 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get<string>('DB_USERNAME'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_DATABASE'),
-        autoLoadEntities: true,
-        synchronize: true,
+        // La app mantiene synchronize=true por defecto (Compose/K8s).
+        // En Render se usa DB_SYNCHRONIZE=false + DB_MIGRATIONS_RUN=true.
+        ...buildTypeOrmOptions((key) => configService.get<string>(key), true),
+        // Si la base no está lista al arrancar (cold start de Render),
+        // Nest reintenta la conexión en lugar de salir al primer fallo.
+        retryAttempts: Number(configService.get('DB_RETRY_ATTEMPTS') ?? 20),
+        retryDelay: Number(configService.get('DB_RETRY_DELAY') ?? 5000),
+        verboseRetryLog: configService.get('DB_RETRY_VERBOSE') === 'true',
       }),
     }),
     LibrosModule,
     SagasModule,
+    MetricsModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

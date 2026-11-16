@@ -4,7 +4,19 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors();
+
+  // CORS configurable: "*" por defecto (desarrollo) o una lista separada
+  // por comas con los orígenes permitidos (ej. el dominio de Netlify).
+  const corsOrigins = process.env.CORS_ORIGINS ?? '*';
+  app.enableCors({
+    origin:
+      corsOrigins === '*'
+        ? true
+        : corsOrigins
+            .split(',')
+            .map((origin) => origin.trim())
+            .filter(Boolean),
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -19,4 +31,4 @@ async function bootstrap() {
   );
   await app.listen(process.env.PORT ?? 3000);
 }
-bootstrap();
+void bootstrap();
