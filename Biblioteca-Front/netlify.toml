@@ -2,10 +2,28 @@
   publish = "dist/biblioteca/browser"
   command = "npm run build"
 
+<<<<<<< Updated upstream
 [build.environment]
   NODE_VERSION = "22"
 
+=======
+<<<<<<< Updated upstream
+=======
+[build.environment]
+  NODE_VERSION = "22"
+
+# Netlify auto-instala este runtime solo al vincular un repo a un sitio NUEVO.
+# Este sitio ya existía (creado con otro repo), así que hay que declararlo
+# explícitamente para que se despliegue la Edge Function de SSR.
+[[plugins]]
+  package = "@netlify/angular-runtime"
+
+# Fallback CSR para rutas profundas si el SSR no está disponible.
+# Con el runtime activo, la Edge Function atiende las rutas antes que este
+# redirect, así que no interfiere con el SSR.
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 [[redirects]]
   from = "/*"
-  to = "/index.html"
+  to = "/index.csr.html"
   status = 200
