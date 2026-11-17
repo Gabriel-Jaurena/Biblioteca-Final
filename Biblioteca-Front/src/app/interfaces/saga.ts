@@ -3,7 +3,7 @@ import type { Libro } from "./libro"; // El CLI no agrega imports, esto lo pones
 export interface Saga {
   id: number;
   nombre: string;
-  description?: string;
+  descripcion?: string;
   fechaInicio?: string;
   era?: string;
   libros?: Libro[];

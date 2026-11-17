@@ -103,7 +103,7 @@ export class ListaLibrosComponent implements OnInit {
   }
 
   agregarLibro() {
-    this.libroService.createLibro(this.nuevoLibro).subscribe({
+    this.libroService.createLibro(this.construirPayload()).subscribe({
       next: (libroCreado) => {
         // Inmutabilidad: Creamos un nuevo array para asegurar detección
         this.libros = [...this.libros, libroCreado];
@@ -119,7 +119,7 @@ export class ListaLibrosComponent implements OnInit {
 
   actualizarLibro() {
     const id = this.nuevoLibro.id;
-    this.libroService.updateLibro(id, this.nuevoLibro).subscribe({
+    this.libroService.updateLibro(id, this.construirPayload()).subscribe({
       next: (libroActualizado) => {
         // Buscamos y reemplazamos el libro en la lista local
         // Usamos map para crear un nuevo array con el libro actualizado
@@ -164,5 +164,18 @@ export class ListaLibrosComponent implements OnInit {
       numeroPaginas: 0,
       descripcion: ''
     };
+  }
+
+  // El backend usa forbidNonWhitelisted: no acepta id ni la relación saga.
+  private construirPayload(): Omit<Libro, 'id' | 'saga'> {
+    const {
+      sagaId,
+      titulo,
+      autor,
+      fechaEdicion,
+      numeroPaginas,
+      descripcion,
+    } = this.nuevoLibro;
+    return { sagaId, titulo, autor, fechaEdicion, numeroPaginas, descripcion };
   }
 }

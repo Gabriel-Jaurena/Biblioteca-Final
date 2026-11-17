@@ -24,7 +24,7 @@ export class ListaSagasComponent implements OnInit {
   criterioOrden: string = 'reciente'; // <--- Nueva variable
 
   // Modelo Formulario
-  nuevaSaga: Saga = { id: 0, nombre: '', description: '', fechaInicio: '', era: '' };
+  nuevaSaga: Saga = { id: 0, nombre: '', descripcion: '', fechaInicio: '', era: '' };
 
   constructor(private sagaService: SagaService) {}
 
@@ -82,7 +82,7 @@ export class ListaSagasComponent implements OnInit {
   }
 
   agregarSaga() {
-    this.sagaService.createSaga(this.nuevaSaga).subscribe({
+    this.sagaService.createSaga(this.construirPayload()).subscribe({
       next: (sagaCreada) => {
         this.sagas = [...this.sagas, sagaCreada];
         this.limpiarFormulario();
@@ -95,7 +95,7 @@ export class ListaSagasComponent implements OnInit {
 
   actualizarSaga() {
     const id = this.nuevaSaga.id;
-    this.sagaService.updateSaga(id, this.nuevaSaga).subscribe({
+    this.sagaService.updateSaga(id, this.construirPayload()).subscribe({
       next: (actualizada) => {
         this.sagas = this.sagas.map(s => s.id === id ? actualizada : s);
         this.limpiarFormulario();
@@ -121,6 +121,21 @@ export class ListaSagasComponent implements OnInit {
   
   limpiarFormulario() {
       this.esEdicion = false;
-      this.nuevaSaga = { id: 0, nombre: '', description: '', fechaInicio: '', era: '' };
+      this.nuevaSaga = { id: 0, nombre: '', descripcion: '', fechaInicio: '', era: '' };
+  }
+
+  // El backend usa forbidNonWhitelisted: no acepta id ni relaciones.
+  private construirPayload(): Omit<Saga, 'id' | 'libros'> {
+    const { nombre, descripcion, fechaInicio, era } = this.nuevaSaga;
+    const payload: Omit<Saga, 'id' | 'libros'> = {
+      nombre,
+      descripcion,
+      era,
+    };
+    // No enviar fecha vacía: @IsDate() rechazaría "".
+    if (fechaInicio) {
+      payload.fechaInicio = fechaInicio;
+    }
+    return payload;
   }
 }

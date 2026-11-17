@@ -24,7 +24,7 @@
         </div>
         <div class="col-12">
           <label class="form-label">Descripción</label>
-          <textarea class="form-control" rows="2" [(ngModel)]="nuevaSaga.description"></textarea>
+          <textarea class="form-control" rows="2" [(ngModel)]="nuevaSaga.descripcion"></textarea>
         </div>
       </div>
     </div>
@@ -88,7 +88,7 @@
             <small class="text-muted">{{ saga.fechaInicio | date:'mediumDate' }}</small>
           </div>
           
-          <p class="card-text text-secondary small">{{ saga.description }}</p>
+          <p class="card-text text-secondary small">{{ saga.descripcion }}</p>
           
           <div class="alert alert-light border d-flex align-items-center p-2 mb-0">
             <i class="bi bi-book-half me-2 text-primary"></i>
