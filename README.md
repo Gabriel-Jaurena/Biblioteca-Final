@@ -1,6 +1,32 @@
 # Biblioteca-Final
 
+![Coverage](https://codecov.io/gh/Gabriel-Jaurena/Biblioteca-Final/branch/main/graph/badge.svg)
+![Backend](https://codecov.io/gh/Gabriel-Jaurena/Biblioteca-Final/branch/main/graph/badge.svg?flag=backend)
+![Frontend](https://codecov.io/gh/Gabriel-Jaurena/Biblioteca-Final/branch/main/graph/badge.svg?flag=frontend)
+
 Aplicación de biblioteca del Cosmere con backend NestJS, frontend Angular y PostgreSQL, más un stack de monitoreo con **Prometheus + Grafana**.
+
+## Cobertura de tests
+
+La cobertura se publica en [Codecov](https://codecov.io/gh/Gabriel-Jaurena/Biblioteca-Final) con dos flags:
+
+| Flag | Job del CI | Reportes |
+|------|------------|----------|
+| `backend` | `backend-tests` | `coverage/unit/lcov.info` + `coverage/e2e/lcov.info` |
+| `frontend` | `frontend-unit` | `coverage/biblioteca/lcov.info` |
+
+Para generar los reportes localmente:
+
+```bash
+# Backend
+cd Biblioteca-Back
+npm run test:cov       # coverage/unit/lcov.info
+npm run test:cov:e2e   # coverage/e2e/lcov.info (requiere PostgreSQL)
+
+# Frontend
+cd Biblioteca-Front
+npm run test:cov       # coverage/biblioteca/lcov.info
+```
 
 ## Estructura del repositorio
 

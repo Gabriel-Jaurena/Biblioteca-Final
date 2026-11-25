@@ -11,5 +11,13 @@
   },
   "testTimeout": 30000,
   "setupFilesAfterEnv": ["<rootDir>/test/jest-e2e-setup.ts"],
-  "maxWorkers": 1
+  "maxWorkers": 1,
+  "coverageDirectory": "coverage/e2e",
+  "coverageReporters": ["text", "lcov"],
+  "collectCoverageFrom": [
+    "src/**/*.ts",
+    "!src/main.ts",
+    "!src/**/*.entity.ts",
+    "!src/**/*.dto.ts"
+  ]
 }

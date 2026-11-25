@@ -1,0 +1,17 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        informational: true
+
+ignore:
+  - "Biblioteca-Back/test/**"
+  - "**/*.spec.ts"
+  - "**/*.e2e-spec.ts"
+  - "Biblioteca-Front/src/server.ts"
+  - "Biblioteca-Front/src/main.server.ts"
+  - "Biblioteca-Front/src/main.ts"

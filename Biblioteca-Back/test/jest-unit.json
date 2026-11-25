@@ -9,6 +9,8 @@
   "moduleNameMapper": {
     "^@/(.*)$": "<rootDir>/src/$1"
   },
+  "coverageDirectory": "coverage/unit",
+  "coverageReporters": ["text", "lcov"],
   "collectCoverageFrom": [
     "src/**/*.ts",
     "!src/main.ts",

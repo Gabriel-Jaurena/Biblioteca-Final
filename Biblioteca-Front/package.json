@@ -8,6 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:unit": "ng test --watch=false --browsers=ChromeHeadless --exclude=\"**/*.integration.spec.ts\"",
+    "test:cov": "ng test --watch=false --browsers=ChromeHeadless --code-coverage --exclude=\"**/*.integration.spec.ts\"",
     "test:integration": "ng test --include=\"**/*.integration.spec.ts\" --watch=false --browsers=ChromeHeadless",
     "lint": "eslint \"src/**/*.{ts,html}\" --fix",
     "serve:ssr:biblioteca": "node dist/biblioteca/server/server.mjs"
