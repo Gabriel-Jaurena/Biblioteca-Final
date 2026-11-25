@@ -8,6 +8,12 @@ coverage:
       default:
         informational: true
 
+flags:
+  backend:
+    carryforward: true
+  frontend:
+    carryforward: true
+
 ignore:
   - "Biblioteca-Back/test/**"
   - "**/*.spec.ts"

@@ -71,14 +71,34 @@ jobs:
             [ -f "$f" ] && sed -i 's|^SF:src/|SF:Biblioteca-Back/src/|' "$f" || true
           done
 
-      - name: Upload backend coverage
+      - name: List coverage reports
+        if: always()
+        run: |
+          echo "Reportes de cobertura generados:"
+          find coverage -name 'lcov.info' -printf '%p (%s bytes)\n' 2>/dev/null | sort || true
+
+      - name: Upload backend unit coverage
         if: always()
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: Biblioteca-Back/coverage/unit/lcov.info,Biblioteca-Back/coverage/e2e/lcov.info
+          files: Biblioteca-Back/coverage/unit/lcov.info
           flags: backend
-          name: backend
+          name: backend-unit
+          disable_search: true
+          verbose: true
+          fail_ci_if_error: false
+
+      - name: Upload backend e2e coverage
+        if: always()
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: Biblioteca-Back/coverage/e2e/lcov.info
+          flags: backend
+          name: backend-e2e
+          disable_search: true
+          verbose: true
           fail_ci_if_error: false
 
   # ─────────────────────────────────────────────
@@ -124,6 +144,12 @@ jobs:
           f=Biblioteca-Front/coverage/biblioteca/lcov.info
           [ -f "$f" ] && sed -i 's|^SF:src/|SF:Biblioteca-Front/src/|' "$f" || true
 
+      - name: List coverage reports
+        if: always()
+        run: |
+          echo "Reportes de cobertura generados:"
+          find coverage -name 'lcov.info' -printf '%p (%s bytes)\n' 2>/dev/null | sort || true
+
       - name: Upload frontend coverage
         if: always()
         uses: codecov/codecov-action@v5
@@ -132,6 +158,8 @@ jobs:
           files: Biblioteca-Front/coverage/biblioteca/lcov.info
           flags: frontend
           name: frontend
+          disable_search: true
+          verbose: true
           fail_ci_if_error: false
 
   # ─────────────────────────────────────────────
