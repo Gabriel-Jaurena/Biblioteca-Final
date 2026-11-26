@@ -1,438 +1,451 @@
 # Biblioteca-Final
 
-![Coverage](https://codecov.io/gh/Gabriel-Jaurena/Biblioteca-Final/branch/main/graph/badge.svg)
-![Backend](https://codecov.io/gh/Gabriel-Jaurena/Biblioteca-Final/branch/main/graph/badge.svg?flag=backend)
-![Frontend](https://codecov.io/gh/Gabriel-Jaurena/Biblioteca-Final/branch/main/graph/badge.svg?flag=frontend)
+![Promedio](https://img.shields.io/codecov/c/github/Gabriel-Jaurena/Biblioteca-Final/main?label=Promedio)
+![Backend](https://img.shields.io/codecov/c/github/Gabriel-Jaurena/Biblioteca-Final/main?flag=backend&label=Backend)
+![Frontend](https://img.shields.io/codecov/c/github/Gabriel-Jaurena/Biblioteca-Final/main?flag=frontend&label=Frontend)
 
-Aplicación de biblioteca del Cosmere con backend NestJS, frontend Angular y PostgreSQL, más un stack de monitoreo con **Prometheus + Grafana**.
+Aplicación full-stack para gestionar el Cosmere: **sagas** y los **libros** que las componen. Backend NestJS con TypeORM y PostgreSQL, frontend Angular con SSR, monitoreo con Prometheus + Grafana y despliegue en Render + Netlify.
 
-## Cobertura de tests
+| Servicio | URL |
+|----------|-----|
+| Frontend (SSR) | https://sanderson-web.netlify.app |
+| API | https://biblioteca-back-z50o.onrender.com |
+| Estado de la API | https://biblioteca-back-z50o.onrender.com/health/ready |
+| Cobertura | https://codecov.io/gh/Gabriel-Jaurena/Biblioteca-Final |
 
-La cobertura se publica en [Codecov](https://codecov.io/gh/Gabriel-Jaurena/Biblioteca-Final) con dos flags:
+> El backend usa el plan free de Render: se suspende tras ~15 minutos sin tráfico y el primer request puede tardar en despertarlo.
 
-| Flag | Job del CI | Reportes |
-|------|------------|----------|
-| `backend` | `backend-tests` | `coverage/unit/lcov.info` + `coverage/e2e/lcov.info` |
-| `frontend` | `frontend-unit` | `coverage/biblioteca/lcov.info` |
+---
 
-Para generar los reportes localmente:
+## Arquitectura
+
+```
+Navegador
+   │
+   ├──► Netlify (Angular SSR)
+   │       └── fetch a la API (URL embebida en build time)
+   │
+   └──► Render (NestJS)
+           ├── ValidationPipe (DTO)
+           ├── Controllers → Services → Repositorios TypeORM
+           └── PostgreSQL
+
+Prometheus ──scrape──► API /metrics
+    ▲                      │
+    └──── Grafana ◄────────┘
+```
+
+| Componente | Tecnología | Responsabilidad |
+|------------|------------|-----------------|
+| Frontend | Angular 20 + Express SSR | Interfaz de sagas y libros; render en servidor |
+| Backend | NestJS 11 + TypeORM | API REST, validación, CORS, health y métricas |
+| Base de datos | PostgreSQL 14 | Persistencia con relación 1:N y borrado en cascada |
+| Monitoreo | Prometheus + Grafana | Métricas HTTP/Node/PostgreSQL y dashboard |
+| CI/CD | GitHub Actions | Tests, cobertura y publicación de imágenes |
+| Deploy | Render + Netlify | API desde imagen Docker; frontend desde el repo |
+
+También incluye manifiestos de **Kubernetes** (`k8s/`) y un entorno local completo con **Docker Compose**.
+
+---
+
+## Funcionalidades
+
+- CRUD completo de sagas y libros.
+- Relación `sagas 1 ── N libros` con `ON DELETE CASCADE`.
+- Filtros por nombre de saga, título de libro, título y saga.
+- Validación estricta de payloads: rechaza campos desconocidos.
+- CORS configurable por variable de entorno.
+- SSR con hidratación y sin caché de transferencia HTTP entre servidor y navegador.
+- Health probes de liveness y readiness.
+- Endpoint `/metrics` en formato Prometheus.
+
+---
+
+## Modelo de datos
+
+**`sagas`**
+
+| Campo | Tipo | Obligatorio |
+|-------|------|-------------|
+| `id` | entero, autoincremental | generado |
+| `nombre` | string (255) | sí |
+| `descripcion` | texto | no |
+| `fechaInicio` | fecha | no |
+| `era` | string | no |
+
+**`libros`**
+
+| Campo | Tipo | Obligatorio |
+|-------|------|-------------|
+| `id` | entero, autoincremental | generado |
+| `sagaId` | entero, FK → `sagas.id` | sí |
+| `titulo` | string (255) | sí |
+| `autor` | string | sí |
+| `fechaEdicion` | fecha | sí |
+| `numeroPaginas` | entero | sí |
+| `descripcion` | texto | sí |
+
+Al eliminar una saga se eliminan sus libros por la cascada de la FK.
+
+---
+
+## API
+
+Base local: `http://localhost:3000`
+Base productiva: `https://biblioteca-back-z50o.onrender.com`
+
+### Endpoints
+
+| Método | Ruta | Descripción | Éxito |
+|--------|------|-------------|-------|
+| GET | `/` | Mensaje de bienvenida | 200 |
+| GET | `/health/live` | Liveness: proceso vivo, sin consultar la BD | 200 |
+| GET | `/health/ready` | Readiness: ejecuta `SELECT 1` contra PostgreSQL | 200 / 503 |
+| GET | `/health` | Alias de `/health/ready` | 200 / 503 |
+| GET | `/metrics` | Métricas en formato Prometheus | 200 |
+| GET | `/sagas` | Lista sagas (incluye sus libros) | 200 |
+| GET | `/sagas/:id` | Obtiene una saga con sus libros | 200 / 404 |
+| POST | `/sagas` | Crea una saga | 201 |
+| PATCH | `/sagas/:id` | Actualiza parcialmente una saga | 200 / 404 |
+| DELETE | `/sagas/:id` | Elimina una saga y sus libros | 200 / 404 |
+| GET | `/libros` | Lista libros | 200 |
+| GET | `/libros/:id` | Obtiene un libro | 200 / 404 |
+| POST | `/libros` | Crea un libro | 201 / 500 |
+| PATCH | `/libros/:id` | Actualiza parcialmente un libro | 200 / 404 |
+| DELETE | `/libros/:id` | Elimina un libro | 200 / 404 |
+
+`DELETE` responde `200` con cuerpo vacío. Los `id` se validan como enteros; un valor no numérico devuelve `400`.
+
+### Filtros
+
+| Ruta | Parámetros | Comportamiento |
+|------|------------|----------------|
+| `GET /sagas` | `nombre`, `libroTitulo` | Búsqueda parcial (`LIKE %valor%`). Devuelve las sagas con sus libros. |
+| `GET /libros` | `titulo`, `sagaId` | Búsqueda parcial por título y coincidencia exacta por saga. |
+
+Ejemplos:
+
+```bash
+curl "http://localhost:3000/sagas?nombre=mistborn"
+curl "http://localhost:3000/sagas?libroTitulo=imperio"
+curl "http://localhost:3000/libros?titulo=imperio"
+curl "http://localhost:3000/libros?sagaId=1"
+```
+
+### Ejemplos de uso
+
+```bash
+BASE=http://localhost:3000
+
+# Crear una saga
+curl -s -X POST $BASE/sagas \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "nombre": "Nacidos de la Bruma",
+    "descripcion": "Primera era del Cosmere",
+    "fechaInicio": "2006-07-17",
+    "era": "Era 1"
+  }'
+
+# Crear un libro asociado (usar el id devuelto por la saga)
+curl -s -X POST $BASE/libros \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "sagaId": 1,
+    "titulo": "El Imperio Final",
+    "autor": "Brandon Sanderson",
+    "fechaEdicion": "2006-07-17",
+    "numeroPaginas": 672,
+    "descripcion": "Primer libro de Mistborn"
+  }'
+
+# Actualizar solo un campo
+curl -s -X PATCH $BASE/libros/1 \
+  -H 'Content-Type: application/json' \
+  -d '{"numeroPaginas": 680}'
+
+# Eliminar
+curl -i -X DELETE $BASE/libros/1
+```
+
+### Validación y errores
+
+El `ValidationPipe` global usa `whitelist` y `forbidNonWhitelisted`: cualquier propiedad que no esté en el DTO produce `400`.
+
+- Enviar `descripcion`, no `description`.
+- No enviar `id`, `libros` ni `saga`: son campos de la entidad, no del DTO.
+- En libros, `descripcion` es obligatoria.
+- Un `sagaId` inexistente devuelve `500` con el mensaje "Verifique que el sagaId exista" (la FK lo rechaza).
+
+| Código | Causa |
+|--------|-------|
+| 400 | Campo desconocido, tipo inválido o `id` no numérico |
+| 404 | El recurso solicitado no existe |
+| 500 | Error de FK al crear un libro con `sagaId` inválido |
+
+---
+
+## Configuración
+
+La API se configura por variables de entorno (`ConfigService`); no hay credenciales ni hosts en el código.
+
+| Variable | Default | Descripción |
+|----------|---------|-------------|
+| `DATABASE_URL` | — | URL completa de conexión. Tiene prioridad sobre `DB_*`. |
+| `DB_HOST` | `localhost` / `postgres` | Host de PostgreSQL. |
+| `DB_PORT` | `5432` | Puerto de PostgreSQL. |
+| `DB_USERNAME` | `sanderson` | Usuario. |
+| `DB_PASSWORD` | `123456789` | Contraseña. |
+| `DB_DATABASE` | `cosmere` | Nombre de la base. |
+| `DB_SSL` | `false` | TLS hacia la BD. También se activa si `DATABASE_URL` incluye `sslmode=require`. |
+| `DB_SYNCHRONIZE` | `true` | TypeORM crea/actualiza el esquema. Se fuerza a `false` si `DB_MIGRATIONS_RUN=true`. |
+| `DB_MIGRATIONS_RUN` | `false` | Ejecuta las migraciones pendientes al iniciar. |
+| `DB_RETRY_ATTEMPTS` | `20` | Intentos de conexión al arrancar. |
+| `DB_RETRY_DELAY` | `5000` | Milisegundos entre intentos. |
+| `DB_RETRY_VERBOSE` | `false` | Log detallado de reintentos. |
+| `PORT` | `3000` | Puerto de la API. Render lo inyecta automáticamente. |
+| `CORS_ORIGINS` | `*` | Orígenes permitidos, separados por comas. |
+| `API_URL` | `http://localhost:3000` | URL de la API embebida en el build de Angular. |
+| `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` | `admin` / `admin` | Credenciales de Grafana. |
+
+Plantillas: `Web/.env.example` (Compose) y `Web/Biblioteca-Back/.env.example` (API desde el host).
+
+Variables típicas en Render: `DATABASE_URL`, `DB_SYNCHRONIZE=false`, `DB_MIGRATIONS_RUN=true` y `CORS_ORIGINS` con el dominio de Netlify.
+
+---
+
+## Puesta en marcha
+
+Requisitos: Docker y Docker Compose. No hace falta instalar Node ni PostgreSQL.
+
+```bash
+# Levantar todo el entorno (aplicación + monitoreo)
+docker compose up -d --build
+
+# Estado de los contenedores
+docker compose ps
+
+# Bajar conservando los datos
+docker compose down
+
+# Bajar y borrar también los volúmenes
+docker compose down -v
+```
+
+| Servicio | URL local | Notas |
+|----------|-----------|-------|
+| Frontend | http://localhost:4200 | Angular SSR; el contenedor escucha en `4000` |
+| API | http://localhost:3000 | NestJS |
+| Métricas | http://localhost:3000/metrics | Formato Prometheus |
+| Liveness | http://localhost:3000/health/live | Sin consultar la BD |
+| Readiness | http://localhost:3000/health/ready | Incluye `SELECT 1` |
+| Prometheus | http://localhost:9090 | Scrape cada 15 s |
+| Grafana | http://localhost:3001 | `admin` / `admin` |
+| PostgreSQL | `localhost:5432` | `sanderson` / `123456789`, base `cosmere` |
+
+Para correr los servicios desde el host, cada módulo tiene sus propios scripts (`npm run start:dev` en el backend, `npm start` en el frontend). En ese caso, la API espera PostgreSQL en `localhost:5432` y el frontend usa `http://localhost:3000` como `API_URL`.
+
+---
+
+## Tests y cobertura
 
 ```bash
 # Backend
 cd Biblioteca-Back
-npm run test:cov       # coverage/unit/lcov.info
-npm run test:cov:e2e   # coverage/e2e/lcov.info (requiere PostgreSQL)
+npm ci
+npm run lint
+npm run test:unit          # Jest, sin cobertura
+npm run test:e2e           # requiere PostgreSQL en localhost:5432
+npm run test:cov           # cobertura unitaria
+npm run test:cov:e2e       # cobertura e2e
 
 # Frontend
-cd Biblioteca-Front
-npm run test:cov       # coverage/biblioteca/lcov.info
+cd ../Biblioteca-Front
+npm ci
+npm run lint
+npm run test:unit          # Karma + ChromeHeadless
+npm run test:integration   # requiere API y PostgreSQL reales
+npm run test:cov           # cobertura unitaria
 ```
 
-## Estructura del repositorio
+El test de integración del frontend hace un `POST` real a `http://localhost:3000/libros`; necesita una saga con `id=1` creada de antemano.
 
-```
-Web/
-├── Biblioteca-Back/     # API NestJS (expone /metrics y /health)
-├── Biblioteca-Front/    # Frontend Angular (SSR con Express)
-├── monitoring/
-│   ├── prometheus.yml                         # scrape config de Prometheus
-│   └── grafana/
-│       ├── provisioning/datasources/          # datasource Prometheus
-│       ├── provisioning/dashboards/           # provider de dashboards
-│       └── dashboards/biblioteca-api.json     # dashboard pre-provisionado
-├── k8s/                 # manifiestos de Kubernetes (sin Helm)
-├── .env.example         # variables de Compose (opcional)
-└── docker-compose.yml   # entorno local completo
-```
+### Codecov
 
-## Servicios y puertos
+Los reportes se generan con Jest y Karma en formato `lcov` y se suben desde el CI con dos flags:
 
-| Servicio | URL local | Descripción |
-|----------|-----------|-------------|
-| Frontend | http://localhost:4200 | Angular SSR (Node/Express, puerto interno `4000`) |
-| API | http://localhost:3000 | NestJS |
-| Métricas de la API | http://localhost:3000/metrics | Formato Prometheus (`text/plain; version=0.0.4`) |
-| Liveness | http://localhost:3000/health/live | Proceso vivo (no consulta la BD) |
-| Readiness | http://localhost:3000/health/ready | Proceso listo (incluye `SELECT 1` a PostgreSQL) |
-| Prometheus | http://localhost:9090 | Recolección de métricas |
-| Grafana | http://localhost:3001 | Visualización (`admin` / `admin`) |
-| PostgreSQL | `localhost:5432` | Base de datos (`sanderson` / `123456789`, db `cosmere`) |
+| Flag | Reportes |
+|------|----------|
+| `backend` | `coverage/unit/lcov.info` + `coverage/e2e/lcov.info` |
+| `frontend` | `coverage/biblioteca/lcov.info` |
 
-> El contenedor del frontend expone `4000` internamente; Compose lo publica en `4200` para mantener la URL de siempre.
+`codecov.yml` define `target: auto`, los `ignore` (specs, `server.ts`, `main.ts`) y `carryforward: true` para que un flag no caiga a 0 % si no se sube en un commit.
 
-## Arranque rápido
+En un monorepo, Jest y Karma emiten rutas relativas (`SF:src/...`). El CI las normaliza con `sed` a `Biblioteca-Back/src/...` y `Biblioteca-Front/src/...` antes de subirlas.
 
-```bash
-# Levantar todo el entorno (incluye monitoreo)
-docker compose up -d --build
+Cobertura actual: **backend ~56 %**, **frontend ~40 %**, **total ~55 %**. La del frontend es baja porque solo hay tests de servicios, no de componentes.
 
-# Ver estado y salud de los contenedores
-docker compose ps
+---
 
-# Bajar el entorno conservando los volúmenes de datos
-docker compose down
+## CI/CD
 
-# Bajar y borrar también los datos (Postgres, Prometheus, Grafana)
-docker compose down -v
-```
+El workflow `CI` (`.github/workflows/ci.yml`) corre en pushes y PRs a `main`, `develop` y `testing`:
 
-Para levantar solo el stack de monitoreo sobre un entorno ya existente:
+| Job | Qué hace |
+|-----|----------|
+| `backend-tests` | Lint, unit y e2e con cobertura; sube el flag `backend` a Codecov |
+| `frontend-unit` | Lint y unit con cobertura; sube el flag `frontend` |
+| `frontend-integration` | Levanta PostgreSQL y la API reales y ejecuta el test de integración |
+| `docker-publish` | Publica las tres imágenes con Buildx para `linux/amd64` |
 
-```bash
-docker compose up -d postgres api postgres-exporter prometheus grafana
-```
-
-## Monitoreo (Fase 1 — Docker Compose)
-
-### Arquitectura
-
-Monitoreo **centralizado**: un único Prometheus y un único Grafana para todos los targets.
-
-```
-                    ┌──────────────┐
-                    │   GRAFANA    │
-                    │   :3001      │
-                    └──────┬───────┘
-                           │ consulta
-                    ┌──────▼───────┐
-                    │  PROMETHEUS  │
-                    │   :9090      │
-                    └──┬───┬───┬───┘
-          scrape       │   │   │
-        ┌──────────────┘   │   └──────────────┐
-        ▼                  ▼                  ▼
-┌───────────────┐  ┌───────────────┐  ┌────────────────┐
-│ api:3000      │  │ postgres-     │  │ prometheus     │
-│ /metrics      │  │ exporter:9187 │  │ :9090          │
-└───────────────┘  └───────────────┘  └────────────────┘
-```
-
-| Componente | Rol |
-|-----------|-----|
-| `prom-client` (backend) | Expone métricas de Node.js y HTTP en `GET /metrics` |
-| `postgres-exporter` | Traduce métricas de PostgreSQL al formato Prometheus |
-| `prometheus` | Scrapea los tres targets cada 15 s y almacena las series |
-| `grafana` | Consulta Prometheus y renderiza el dashboard `Biblioteca API` |
-
-### Instrumentación del backend
-
-El módulo `Biblioteca-Back/src/metrics/` contiene:
-
-- `metrics.service.ts`: usa un `Registry` propio de `prom-client` (evita colisiones en Jest) con las métricas por defecto de Node (`process_*`, `nodejs_*`).
-- `http-metrics.interceptor.ts`: interceptor global que registra cada petición en `http_requests_total` y `http_request_duration_seconds`, etiquetando por `method`, `route` y `status_code`. Usa la ruta del handler (`/libros/:id`) en lugar de la URL cruda para evitar cardinalidad alta. Las rutas `/health*` se excluyen para que los probes no inflen las métricas.
-- `metrics.controller.ts`: expone `GET /metrics`.
-- `metrics.module.ts`: registra el controlador y el interceptor global (`APP_INTERCEPTOR`).
-
-### Dashboard
-
-Grafana se aprovisiona automáticamente desde archivos (no hace falta importar nada a mano):
-
-- Datasource `Prometheus` (`uid=prometheus`, por defecto) → `http://prometheus:9090`
-- Dashboard `Biblioteca API` (`uid=biblioteca-api`), con 6 paneles:
-  1. Tasa de peticiones por ruta
-  2. Latencia p95 por ruta
-  3. Peticiones por código de estado
-  4. Memoria residente del proceso
-  5. Event loop lag
-  6. Estado de los targets (`up`)
-
-### Verificación
-
-```bash
-# Endpoint de métricas del backend
-curl -s http://localhost:3000/metrics | head
-
-# Targets de Prometheus (los 3 deben estar "up")
-curl -s http://localhost:9090/api/v1/targets \
-  | jq -r '.data.activeTargets[] | "\(.labels.job)\t\(.health)"'
-
-# Healthy de Grafana
-curl -s -u admin:admin http://localhost:3001/api/health
-```
-
-## Preparación para Kubernetes (Fase 2)
-
-La aplicación queda lista para desplegarse en un cluster sin cambios de código:
-
-### Health probes
-
-El módulo `Biblioteca-Back/src/health/` expone:
-
-| Endpoint | Tipo | Comportamiento |
-|----------|------|----------------|
-| `GET /health/live` | Liveness | Devuelve `200 {"status":"ok"}` si el proceso responde. No consulta la BD, para no reiniciar el Pod cuando PostgreSQL está caído. |
-| `GET /health/ready` | Readiness | Ejecuta `SELECT 1` contra PostgreSQL. Devuelve `200` si la BD responde o `503` si no. |
-| `GET /health` | Alias | Equivale a `/health/ready` (útil para chequeos manuales y Compose). |
-
-En Kubernetes se mapean directamente a los probes:
-
-```yaml
-livenessProbe:
-  httpGet:
-    path: /health/live
-    port: 3000
-  initialDelaySeconds: 10
-  periodSeconds: 15
-
-readinessProbe:
-  httpGet:
-    path: /health/ready
-    port: 3000
-  initialDelaySeconds: 5
-  periodSeconds: 10
-```
-
-### Configuración por entorno
-
-Toda la configuración se lee de variables de entorno (`ConfigService`); no hay credenciales ni hosts hardcodeados en el código. Los valores por defecto de Compose permiten levantar todo sin crear un `.env`:
-
-| Variable | Default en Compose | Uso |
-|----------|--------------------|-----|
-| `DB_TYPE` | `postgres` | Driver de TypeORM |
-| `DB_HOST` | `postgres` | Host de la base (`localhost` fuera de Compose) |
-| `DB_PORT` | `5432` | Puerto de la base |
-| `DB_USERNAME` | `sanderson` | Usuario |
-| `DB_PASSWORD` | `123456789` | Contraseña |
-| `DB_DATABASE` | `cosmere` | Nombre de la base |
-| `DB_SSL` | `false` | Habilita TLS hacia la BD |
-| `DB_SYNCHRONIZE` | `true` | Autosync de esquema (`false` cuando se usen migraciones) |
-| `PORT` | `3000` (API) / `4000` (front) | Puerto de escucha |
-| `API_URL` | `http://localhost:3000` | URL de la API embebida en el build de Angular |
-| `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` | `admin` / `admin` | Credenciales de Grafana |
-
-Ejemplos disponibles:
-
-- `Web/.env.example` → variables de Docker Compose.
-- `Web/Biblioteca-Back/.env.example` → para correr la API desde el host.
-
-En Kubernetes, estos valores se moverán a un `ConfigMap` (no sensibles) y a un `Secret` (credenciales).
-
-### Imágenes de producción
-
-Ambos `Dockerfile` son multi-stage:
-
-| Imagen | Etapas | Runtime |
-|--------|--------|---------|
-| Backend | `deps` → `build` → `runtime` | `node dist/main.js`, usuario `node`, puerto `3000` |
-| Frontend | `deps` → `build` (Angular SSR) → `runtime` | `node dist/biblioteca/server/server.mjs`, usuario `node`, puerto `4000` |
-
-- El runtime instala solo dependencias de producción (`npm ci --omit=dev`).
-- Los contenedores corren como usuario **no root** (compatible con `securityContext` de K8s).
-- `.dockerignore` excluye `node_modules`, `dist`, `.env` y artefactos de test.
-- La URL de la API del frontend se inyecta en build time: `docker build --build-arg API_URL=... ./Biblioteca-Front`.
-
-### Publicación de imágenes (CI)
-
-El job `docker-publish` usa **Docker Buildx** y publica las tres imágenes para `linux/amd64`:
+`docker-publish` depende de los tres jobs de test. Publica:
 
 - `gabyjaurena/biblioteca-back:2.0`
 - `gabyjaurena/biblioteca-front:2.0`
 - `gabyjaurena/postgres14-alpine:2.0`
 
-La URL de la API del frontend se toma de la variable de repositorio `API_URL` y, si no está definida, usa `https://biblioteca-back-z50o.onrender.com`.
+El frontend recibe `API_URL` como build arg (Angular la resuelve en build time); si la variable de repositorio no está definida, usa `https://biblioteca-back-z50o.onrender.com`.
 
-### Deploy automático en Render (Deploy Hook)
-
-El CD vive en un workflow aparte, `.github/workflows/deploy-hook.yml` (`name: DeployHook`). Se dispara cuando el workflow `CI` termina (`workflow_run`), así la imagen ya fue publicada por `docker-publish` y no hay carrera entre workflows.
-
-Solo despliega si el `CI` terminó en éxito, el evento fue un `push` (no un PR) y la rama es la de deploy (por defecto `main`, configurable con la variable de repositorio `DEPLOY_BRANCH`). También se puede lanzar a mano con **Actions → DeployHook → Run workflow**.
-
-1. En Render → servicio `biblioteca-back` → **Settings → Deploy Hook**: copiar la URL.
-2. En GitHub → **Settings → Secrets and variables → Actions → New repository secret**:
-   - `RENDER_DEPLOY_HOOK` = URL del hook (`https://api.render.com/deploy/srv-...?key=...`).
-3. El workflow publica `gabyjaurena/biblioteca-back:2.0` y luego ejecuta:
-
-   ```bash
-   curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
-   ```
-
-El servicio de Render debe estar configurado como **"Deploy an existing image from a registry"** apuntando a `gabyjaurena/biblioteca-back:2.0`. Como el tag es mutable, cada redeploy vuelve a descargar la imagen recién publicada.
-
-> El deploy solo se dispara en la rama configurada, pero la imagen `:2.0` se sobrescribe con cada build que llegue a `docker-publish`.
-
-### Verificación local
+**Deploy de la API**: el workflow `DeployHook` (`.github/workflows/deploy-hook.yml`) escucha el fin del `CI` y, solo si terminó en éxito, fue un `push` y la rama es `main` (configurable con `DEPLOY_BRANCH`), ejecuta:
 
 ```bash
-# Liveness (rápido, sin BD)
-curl -s http://localhost:3000/health/live
-
-# Readiness (incluye PostgreSQL)
-curl -s http://localhost:3000/health/ready
-
-# El healthcheck de Compose usa /health/ready
-docker inspect --format '{{.State.Health.Status}}' web-api-1
+curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
 ```
 
-## Despliegue en Kubernetes (Fase 3)
+Render corre la imagen `gabyjaurena/biblioteca-back:2.0` (servicio "existing image"), conecta con reintentos y aplica migraciones al arrancar.
 
-Los manifiestos están en `k8s/`, **sin Helm**, con un archivo por servicio. Cada archivo agrupa todos los objetos de ese componente y lleva un prefijo numérico para que `kubectl apply -f k8s/` respete el orden (primero el Namespace y el Secret).
+**Deploy del frontend**: Netlify clona el repo y buildea Angular. `netlify.toml` define `publish = dist/biblioteca/browser`, el plugin `@netlify/angular-runtime` (crea la Edge Function de SSR) y un redirect de fallback a `index.csr.html`.
+
+---
+
+## Monitoreo
+
+Un único Prometheus y un único Grafana centralizan todos los targets.
+
+```
+Grafana :3001 ──consulta──► Prometheus :9090
+                                 │ scrape
+                    ┌────────────┼────────────┐
+                    ▼            ▼            ▼
+              api:3000     postgres-       prometheus
+              /metrics     exporter:9187   :9090
+```
+
+| Componente | Rol |
+|------------|-----|
+| `prom-client` (backend) | Métricas de Node y HTTP en `GET /metrics` |
+| `postgres-exporter` | Métricas de PostgreSQL en formato Prometheus |
+| Prometheus | Scrapea los tres targets cada 15 s |
+| Grafana | Dashboard `Biblioteca API` con 6 paneles |
+
+El interceptor HTTP mide `http_requests_total` y `http_request_duration_seconds` por `method`, `route` y `status_code`. Usa la ruta del handler (`/libros/:id`) para evitar cardinalidad alta y excluye `/health*`.
+
+El dashboard incluye: tasa de requests por ruta, latencia p95, requests por status, memoria del proceso, event loop lag y estado de los targets. Se aprovisiona desde archivos, sin importación manual.
+
+```bash
+curl -s http://localhost:3000/metrics | head
+curl -s http://localhost:9090/api/v1/targets \
+  | jq -r '.data.activeTargets[] | "\(.labels.job)\t\(.health)"'
+curl -s -u admin:admin http://localhost:3001/api/health
+```
+
+---
+
+## Kubernetes
+
+Los manifiestos están en `k8s/`, sin Helm. Cada archivo agrupa los objetos de un componente y el prefijo numérico ordena su aplicación.
 
 | Archivo | Objetos |
 |---------|---------|
-| `00-namespace.yaml` | `Namespace biblioteca` |
-| `01-secret.yaml` | `Secret` con credenciales de Postgres y Grafana |
-| `10-postgres.yaml` | `Service` headless, `Service` del exporter y `StatefulSet` con **postgres-exporter como sidecar** |
-| `20-backend.yaml` | `Service api` + `Deployment backend` (1 réplica, probes `/health/*`) |
-| `30-frontend.yaml` | `Service frontend` + `Deployment frontend` (2 réplicas, SSR en `4000`) |
-| `40-prometheus.yaml` | `ConfigMap`, `PVC`, `Service` y `Deployment` de Prometheus |
-| `50-grafana.yaml` | `ConfigMaps` (datasource, provider y dashboard), `PVC`, `Service` y `Deployment` |
-| `60-ingress.yaml` | `Ingress` opcional para `biblioteca.local` y `api.biblioteca.local` |
+| `00-namespace.yaml` | Namespace `biblioteca` |
+| `01-secret.yaml` | Credenciales de PostgreSQL y Grafana |
+| `10-postgres.yaml` | Service headless, Service del exporter y StatefulSet con sidecar |
+| `20-backend.yaml` | Service `api` y Deployment del backend (1 réplica) |
+| `30-frontend.yaml` | Service y Deployment del frontend (2 réplicas) |
+| `40-prometheus.yaml` | ConfigMap, PVC, Service y Deployment |
+| `50-grafana.yaml` | ConfigMaps, PVC, Service y Deployment |
+| `60-ingress.yaml` | Ingress para `biblioteca.local` y `api.biblioteca.local` |
 
-### Topología
-
-```
-Ingress (opcional)
-   ├── biblioteca.local      → Service frontend:80  → Pods frontend:4000
-   └── api.biblioteca.local  → Service api:3000     → Pods backend:3000
-
-Service postgres (headless) → Pod postgres
-   ├── postgres:5432
-   └── postgres-exporter:9187 (sidecar, localhost:5432)
-
-Service prometheus:9090 → Pod prometheus
-Service grafana:3000    → Pod grafana
-
-Prometheus scrapea:
-   - api:3000/metrics
-   - postgres-exporter:9187/metrics
-   - localhost:9090
-```
-
-Los nombres de los Services (`api`, `postgres-exporter`, `prometheus`) coinciden con los targets de `monitoring/prometheus.yml`, por lo que la configuración de scrape es la misma que en Compose.
-
-### Requisitos
-
-- `kubectl` apuntando al cluster.
-- Un **StorageClass por defecto** (los PVC de Postgres, Prometheus y Grafana lo usan).
-- Las imágenes disponibles para el cluster:
-  - `gabyjaurena/biblioteca-back:2.0`
-  - `gabyjaurena/biblioteca-front:2.0`
-  - `gabyjaurena/postgres14-alpine:2.0`
-- Opcional: un Ingress Controller (nginx) si se aplica `60-ingress.yaml`.
-
-### Imágenes y URL del frontend
-
-Angular embebe `API_URL` en **build time**. Hay dos escenarios:
-
-**A) Acceso con `port-forward` (sin Ingress):**
+Son 20 recursos. El stack fue probado en minikube: pods `Ready`, PVCs `Bound`, CRUD contra la API, targets de Prometheus en `up`, dashboard de Grafana y auto-healing al borrar pods.
 
 ```bash
-docker build -t gabyjaurena/biblioteca-back:2.0 ./Biblioteca-Back
-docker build \
-  --build-arg API_URL=http://localhost:3000 \
-  -t gabyjaurena/biblioteca-front:2.0 ./Biblioteca-Front
-```
+# Cluster local
+minikube start
+minikube addons enable ingress
 
-**B) Acceso con Ingress:**
-
-```bash
-docker build \
-  --build-arg API_URL=http://api.biblioteca.local \
-  -t gabyjaurena/biblioteca-front:2.0 ./Biblioteca-Front
-```
-
-En un cluster local (kind/minikube) las imágenes locales se cargan con:
-
-```bash
-kind load docker-image gabyjaurena/biblioteca-back:2.0 gabyjaurena/biblioteca-front:2.0
-# o, con minikube:
+# Cargar imágenes publicadas por el CI
 minikube image load gabyjaurena/biblioteca-back:2.0
 minikube image load gabyjaurena/biblioteca-front:2.0
-```
+minikube image load gabyjaurena/postgres14-alpine:2.0
 
-### Desplegar
-
-```bash
-# Namespace primero (el prefijo 00 lo ordena igual con -f k8s/)
+# Desplegar
 kubectl apply -f k8s/00-namespace.yaml
-
-# Resto de los manifiestos
 kubectl apply -f k8s/
 
-# Estado
-kubectl get pods -n biblioteca -w
+# Verificar
+kubectl get pods,svc,pvc,ingress -n biblioteca
 kubectl rollout status deployment/backend -n biblioteca
-kubectl rollout status deployment/frontend -n biblioteca
-```
 
-El Ingress es opcional; si no hay controller, omitir ese archivo:
-
-```bash
-kubectl apply -f k8s/00-namespace.yaml
-kubectl apply -f k8s/01-secret.yaml
-kubectl apply -f k8s/10-postgres.yaml
-kubectl apply -f k8s/20-backend.yaml
-kubectl apply -f k8s/30-frontend.yaml
-kubectl apply -f k8s/40-prometheus.yaml
-kubectl apply -f k8s/50-grafana.yaml
-```
-
-### Acceso sin Ingress
-
-```bash
+# Acceso sin Ingress
 kubectl port-forward -n biblioteca svc/frontend 4200:80
 kubectl port-forward -n biblioteca svc/api 3000:3000
+
+# Prometheus y Grafana
 kubectl port-forward -n biblioteca svc/prometheus 9090:9090
 kubectl port-forward -n biblioteca svc/grafana 3001:3000
+
+# Apagar
+minikube stop
+# Borrar todo el cluster: minikube delete
 ```
 
-Luego: frontend `http://localhost:4200`, Prometheus `http://localhost:9090`, Grafana `http://localhost:3001` (`admin` / `admin`).
-
-### Acceso con Ingress
-
-Con un controller nginx instalado (`minikube addons enable ingress`, o el manifiesto de kind), agregar al `/etc/hosts` la IP del Ingress:
+Con Ingress, agregar al `/etc/hosts` la IP de `minikube ip`:
 
 ```
-<IP_DEL_INGRESS>  biblioteca.local  api.biblioteca.local
+192.168.49.2  biblioteca.local  api.biblioteca.local
 ```
 
-### Verificación
+Consideraciones:
 
-```bash
-kubectl get pods -n biblioteca
-kubectl get svc -n biblioteca
-kubectl get pvc -n biblioteca
+- Las credenciales de `01-secret.yaml` son de laboratorio; en producción deben gestionarse con SealedSecrets o External Secrets.
+- Las imágenes usan `imagePullPolicy: IfNotPresent` y tag mutable `2.0`: tras publicar una nueva, ejecutar `kubectl rollout restart deployment/backend deployment/frontend -n biblioteca`.
+- El backend corre con 1 réplica mientras `DB_SYNCHRONIZE=true` para evitar que dos pods creen el esquema a la vez.
+- El frontend se compila con `API_URL=http://api.biblioteca.local`; ese host funciona por Ingress desde el navegador, pero no resuelve dentro del pod. Por eso el SSR no trae datos en el cluster y sí lo hace el navegador por CSR.
 
-# Logs y probes
-kubectl logs -n biblioteca deployment/backend
-kubectl describe pod -n biblioteca -l app=backend | grep -A5 Probes
+---
 
-# Prometheus: los 3 targets deben estar "up"
-kubectl port-forward -n biblioteca svc/prometheus 9090:9090
-curl -s http://localhost:9090/api/v1/targets \
-  | jq -r '.data.activeTargets[] | "\(.labels.job)\t\(.health)"'
+## Estructura del repositorio
+
+```
+Web/
+├── Biblioteca-Back/          # API NestJS
+│   ├── src/
+│   │   ├── libros/
+│   │   ├── sagas/
+│   │   ├── health/
+│   │   ├── metrics/
+│   │   └── database/         # configuración de TypeORM y migraciones
+│   ├── test/                 # Jest unit y e2e
+│   └── Dockerfile
+├── Biblioteca-Front/         # Angular SSR
+│   ├── src/
+│   ├── netlify.toml
+│   ├── karma.conf.js
+│   └── Dockerfile
+├── monitoring/               # Prometheus y provisioning de Grafana
+├── k8s/                      # manifiestos de Kubernetes
+├── .github/workflows/        # CI y DeployHook
+├── codecov.yml
+├── docker-compose.yml
+└── .env.example
 ```
 
-Grafana se aprovisiona solo con el mismo dashboard `Biblioteca API` de la Fase 1.
+---
 
-### Consideraciones
+## Consideraciones de producción
 
-- `01-secret.yaml` contiene credenciales de **laboratorio**. En producción se deben reemplazar o gestionar con SealedSecrets/External Secrets.
-- Las imágenes usan `imagePullPolicy: IfNotPresent` con el tag mutable `2.0`. Después de publicar una nueva imagen con CI, forzar la actualización con:
-  ```bash
-  kubectl rollout restart deployment/backend deployment/frontend -n biblioteca
-  ```
-- `postgres-exporter` comparte el Pod de Postgres y usa `localhost:5432`; es el caso de sidecar válido dentro del esquema de monitoreo centralizado.
-- El backend corre con **1 réplica** mientras `DB_SYNCHRONIZE=true`, para evitar que dos Pods creen el esquema a la vez. Cuando se agreguen migraciones (y `DB_SYNCHRONIZE=false`), se puede escalar y sumar un HPA.
-- El Ingress no está incluido en el flujo por defecto porque no todos los clusters tienen controller.
-- Los manifiestos fueron validados estáticamente con `kubeconform` (20 recursos, 0 errores); la validación en un cluster real queda pendiente de tener `kubectl`/kind/minikube instalado.
-
-## Tests
-
-```bash
-cd Biblioteca-Back
-npm run lint
-npm run test:unit
-npm run test:e2e    # requiere PostgreSQL en localhost:5432 (docker compose up -d postgres)
-```
-
-Los tests e2e usan `DB_PORT=5432` por defecto y respetan la variable si ya viene definida (por ejemplo en CI).
-
-## Roadmap
-
-- **Fase 1 (completada)**: monitoreo con Compose — Prometheus, Grafana, postgres-exporter y dashboard provisionado.
-- **Fase 2 (completada)**: aplicación preparada para Kubernetes — `/health/live` y `/health/ready`, configuración 100 % por entorno, imágenes multi-stage no root y publicación `linux/amd64` con Buildx.
-- **Fase 3 (manifiestos listos)**: despliegue en Kubernetes con YAML planos en `k8s/` (sin Helm). Validados estáticamente con `kubeconform`; pendiente de ejecutar en un cluster real.
-- **Fase 4 (pendiente)**: Terraform para provisionar infraestructura (cluster, red, registry, DNS) y aplicar los mismos manifiestos; deploy en Render con URL configurable.
-
-> Docker Compose se mantiene como entorno de **desarrollo local**; Kubernetes será la capa de **despliegue**. Ambos consumen las mismas imágenes y la misma configuración de Prometheus.
+- **Render free**: cold start tras ~15 min sin tráfico y la base free expira a los 30 días.
+- **Netlify**: si se quita `@netlify/angular-runtime` de `netlify.toml`, se publica solo el shell CSR y las rutas profundas devuelven 404.
+- **URL de la API**: Angular la embebe en build time; si cambia el dominio del backend, hay que rebuildear el frontend.
+- **Tag mutable `2.0`**: simplifica el deploy pero reduce trazabilidad; una mejora es publicar también por commit SHA.
+- **Secretos**: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `RENDER_DEPLOY_HOOK` y `CODECOV_TOKEN` viven en GitHub Secrets, nunca en el repo.
